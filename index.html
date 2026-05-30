@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>HTML5 Experiments</title>
+        <link rel="stylesheet" href="css/styles.css">
+    </head>
+    <body>
+        <div id="start-menu">
+            <h1>Test Drive</h1>
+            <div class="input-group">
+                <label for="mapSizeInput">Map Size (tiles wide/high): </label>
+                <input type="number" id="mapSizeInput" value="20" min="10" max="100">
+            </div>
+            <button id="startButton">Generate Map</button>
+        </div>
+        <div id="game-container" class="hidden">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        <script type="module" src="js/main.js"></script>
+    </body>
+</html>
