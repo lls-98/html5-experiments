@@ -6,6 +6,7 @@ html, body {
     overflow: hidden; /* Prevent default mobile bouncing or desktop scrolling */
     background-color: #111;
     font-family: sans-serif;
+    user-select: none;
 }
 
 #game-container {
@@ -27,66 +28,139 @@ canvas {
     image-rendering: crisp-edges;
 }
 
-#start-menu {
+/*master styling of cards*/
+.menu-card {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%); /* Centers the card perfectly regardless of its dimensions */
-    
-    background-color: #333;
-    padding: 40px;
+    background-color: #252525;
+    padding: 35px 40px;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    border: 1px solid #3e3e42;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     text-align: center;
-    color: white;
-    
-    /* Give it a crisp card width */
-    width: 320px;
+    color: #f5f5f5;
+    width: 340px;
     max-width: 90vw; 
     z-index: 10; /* Ensures it stays on top of anything else */
 }
 
-#start-menu h1 {
-    margin-top: 0;
+.menu-card h1 {
+    margin: 0 0 25px 0;
     color: #4caf50;
+    font-size: 28px;
+    letter-spacing: 2px;
 }
 
+.menu-card h2 {
+    margin: 0 0 20px 0;
+    color: #007ACC;
+}
+
+/*dynamic config entry formatting*/
 .input-group {
-    margin: 20px 0;
+    margin-bottom: 20px;
+    text-align: left;
 }
 
 .input-group label {
     display: block;
     margin-bottom: 8px;
-}
-
-#mapSizeInput {
-    padding: 8px;
-    border-radius: 4px;
-    border: none;
-    width: 80px;
-    text-align: center;
     font-size: 14px;
+    color: #bbb;
 }
 
-#startButton {
-    background-color: #4caf50;
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 10px;
+    background-color: #1e1e1e;
+    border: 1px solid #3e3e42;
     color: white;
-    border: none;
-    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+/* Menu Button Mechanics */
+.menu-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
     font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    box-sizing: border-box;
+    transition: background 0.2s, transform 0.1s;
+}
+.menu-btn:active { transform: scale(0.98); }
+
+.success { background-color: #4CAF50; }
+.success:hover { background-color: #45a049; }
+.info { background-color: #007ACC; }
+.info:hover { background-color: #0062a3; }
+.danger { background-color: #D32F2F; }
+.danger:hover { background-color: #C62828; }
+
+.file-label { text-align: center; line-height: 20px; }
+.btn-row { display: flex; gap: 10px; }
+
+/* In-Game Overlay Floating Toolbar Layout */
+#editor-toolbar {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(30, 30, 30, 0.9);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.tool-btn {
+    background-color: #444;
+    color: white;
+    border: 1px solid #555;
+    padding: 8px 14px;
+    font-size: 13px;
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.2s;
 }
 
-#startButton:hover {
-    background-color: #45a049;
+.tool-btn:hover { background-color: #555; }
+.success-btn { background-color: #4CAF50; border-color: #45a049; }
+.success-btn:hover { background-color: #45a049; }
+
+/* Status Badges for Game Modes */
+.phase-badge {
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    letter-spacing: 1px;
 }
 
-/*utility class to hide/show elements*/
+.phase-badge.terrain { 
+    background-color: #e65100; color: white; 
+}
+
+.phase-badge.simulation { 
+    background-color: #004d40; color: #80cbc4; 
+}
 
 .hidden {
-    display: none !important;
+    display: none !important; 
 }
-

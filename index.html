@@ -7,17 +7,56 @@
         <link rel="stylesheet" href="css/styles.css">
     </head>
     <body>
-        <div id="start-menu">
-            <h1>Test Drive</h1>
-            <div class="input-group">
-                <label for="mapSizeInput">Map Size (tiles wide/high): </label>
-                <input type="number" id="mapSizeInput" value="20" min="10" max="100">
+        <div id="main-menu" class="menu-card">
+        <h1>Main Menu</h1>
+        <button id="newGameBtn" class="menu-btn success">New Game</button>
+        <label for="loadInputMainMenu" class="menu-btn info file-label">Load Game</label>
+        <input type="file" id="loadInputMainMenu" accept=".json" style="display: none;">
+    </div>
+
+    <div id="generator-menu" class="menu-card hidden">
+        <h2>Map Generator</h2>
+        
+        <div class="input-group">
+            <label for="mapSizeInput">Map Size (Tiles):</label>
+            <input type="number" id="mapSizeInput" value="30" min="10" max="100">
+        </div>
+
+        <div class="input-group">
+            <label for="mapTypeInput">Terrain Theme:</label>
+            <select id="mapTypeInput">
+                <option value="plain">Plain Grasslands</option>
+                <option value="river">Winding River</option>
+                <option value="coastal">Coast</option>
+                <option value="lake">Central Lake</option>
+            </select>
+        </div>
+
+        <div class="btn-row">
+            <button id="backToMenuBtn" class="menu-btn danger">Back</button>
+            <button id="generateMapBtn" class="menu-btn success">Generate Map</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden">
+        
+        <div id="editor-toolbar">
+            <div id="terrain-phase-controls" class="toolbar-group">
+                <span class="phase-badge terrain">Map Editor Mode</span>
+                <button id="saveMapBtn" class="tool-btn">Save Map</button>
+                <button id="switchToBuildBtn" class="tool-btn success-btn">Build City!</button>
             </div>
-            <button id="startButton">Generate Map</button>
+
+            <div id="build-phase-controls" class="toolbar-group hidden">
+                <span class="phase-badge simulation">City Build Mode</span>
+                <button id="saveGameBtn" class="tool-btn">Save City</button>
+            </div>
         </div>
-        <div id="game-container" class="hidden">
-            <canvas id="gameCanvas"></canvas>
-        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    
+    <input type="file" id="loadInputInGame" accept=".json" style="display: none;">
         <script type="module" src="js/main.js"></script>
     </body>
 </html>

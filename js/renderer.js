@@ -40,6 +40,8 @@ export class Renderer {
                     this.ctx.fillStyle = '#388e3c';
                 } else if (tile.type === 'road') {
                     this.ctx.fillStyle = '#424242';
+                } else if (tile.type === 'water') {
+                    this.ctx.fillStyle = '#1976d2';
                 }
                 //draw the tile smaller than tile-size to create grid effect
                 this.ctx.fillRect(
