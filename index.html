@@ -42,17 +42,93 @@
         
         <div id="editor-toolbar">
             <div id="terrain-phase-controls" class="toolbar-group">
-                <span class="phase-badge terrain">Map Editor Mode</span>
+                <span class="phase-badge terrain">Terrain Mode</span>
                 <button id="saveMapBtn" class="tool-btn">Save Map</button>
                 <button id="switchToBuildBtn" class="tool-btn success-btn">Build City!</button>
             </div>
 
             <div id="build-phase-controls" class="toolbar-group hidden">
-                <span class="phase-badge simulation">City Build Mode</span>
+                <span class="phase-badge simulation">Simulation Mode</span>
                 <button id="saveGameBtn" class="tool-btn">Save City</button>
             </div>
         </div>
 
+        <div id="terrain-sidebar">
+            <h3>Terrain Brushes</h3>
+            <button class="brush-btn active" data-type="empty">Grass</button>
+            <button class="brush-btn" data-type="water">Water</button>
+            <button class="brush-btn" data-type="forest">Forest</button>
+            <button class="brush-btn" data-type="sand">Sand</button>
+            <button class="brush-btn" data-type="mountain">Mountain</button>
+        </div>
+        
+    <div id="build-sidebar" class="hidden">
+        <h3>City Menu</h3>
+        
+        <button class="menu-category-btn" data-tool="bulldozer">Bulldozer</button>
+        <button class="menu-category-btn" data-tool="query">Query</button>
+        
+        <hr class="menu-divider">
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger">Zoning <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="build-btn" data-tool="residential">Residential</button>
+                <button class="build-btn" data-tool="commercial">Commercial</button>
+                <button class="build-btn" data-tool="industrial">Industrial</button>
+            </div>
+        </div>
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger">Roads <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="build-btn" data-tool="road">Standard Road</button>
+            </div>
+        </div>
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger">Services <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="build-btn placeholder" data-tool="police">Police Station</button>
+                <button class="build-btn placeholder" data-tool="fire">Fire Station</button>
+            </div>
+        </div>
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger">Transit <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="build-btn placeholder" data-tool="rail">Rail Line</button>
+                <button class="build-btn placeholder" data-tool="airport">Airport</button>
+            </div>
+        </div>
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger">Unique <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="build-btn placeholder" data-tool="stadium">Stadium</button>
+            </div>
+        </div>
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger">⚡ Power <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="build-btn power-tool" data-tool="powerplant">Power Plant</button>
+            </div>
+        </div>
+
+        <hr class="menu-divider">
+
+        <div class="category-wrapper">
+            <button class="menu-category-btn dropdown-trigger views-trigger">City Views <span>▶</span></button>
+            <div class="submenu-panel">
+                <button class="view-btn active" data-view="normal">Normal Map</button>
+                <button class="view-btn" data-view="traffic">Traffic Data</button>
+                <button class="view-btn" data-view="pollution">Pollution Map</button>
+                <button class="view-btn" data-view="powergrid">Power Grid</button>
+            </div>
+        </div>
+    </div>
+        
         <canvas id="gameCanvas"></canvas>
     </div>
     
