@@ -75,6 +75,15 @@ export class CanvasView {
                     case 3: // Industrial (Yellow/Orange shades)
                         this.ctx.fillStyle = `rgb(${120 + (density * 30)}, ${120 + (density * 30)}, 0)`;
                         break;
+                    case 4: // Road Infrastructure (Solid Dark Grey)
+                        this.ctx.fillStyle = '#444444';
+                        break;
+                    case 5: // Power Line (Cyan if powered, Dark Red-Brown if unpowered)
+                        this.ctx.fillStyle = this.state.powerLayer[idx] === 1 ? '#00ffff' : '#552222';
+                        break;
+                    case 6: // Power Plant Generator Source (Bright Purple Matrix Cell)
+                        this.ctx.fillStyle = '#aa00ff';
+                        break;
                     default: // Empty Terrain / Agriculture
                         this.ctx.fillStyle = '#2d2d2d';
                         break;
