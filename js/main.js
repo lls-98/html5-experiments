@@ -1,33 +1,48 @@
 import { WorldState } from './core/WorldState.js';
 import { Engine } from './core/Engine.js';
+import { CanvasView } from './view/CanvasView.js';
+import { Input } from './view/Input.js';
 
 // DOM Instrumentation Debug Nodes
 const fpsCounter = document.getElementById('fps-val');
 const tickCounter = document.getElementById('tick-val');
+const toolCounter = document.getElementById('tool-val');
 
-// 1. Initialise core State
+// 1. Initialize core state memory structures
 const world = new WorldState(64, 64);
 
-// 2. Define Simulation Loop Logic Callback
+// 2. Initialize graphics viewing layer and input intercept pipelines
+const view = new CanvasView('gameCanvas', world);
+
+const handleTileClick = (x, y) => {
+    const idx = world.getIndex(x, y);
+    
+    // Debug Tool Action: Clicking increments building growth status step metrics
+    if (world.zoneLayer[idx] > 0) {
+        world.developmentLayer[idx] = (world.developmentLayer[idx] + 1) % 5;
+    }
+    
+    toolCounter.textContent = `Clicked (${x}, ${y}) [State Tier: ${world.developmentLayer[idx]}]`;
+};
+
+const inputProcessor = new Input(view, handleTileClick);
+
+// 3. Hook up dual update thread loops
 const simulationUpdate = (state) => {
-    // This is where EconomicSimulator, GrowthSimulator, etc., will be hooked in.
-    // For now, it updates our DOM UI indicator.
     tickCounter.textContent = state.gameTickCount;
 };
 
-// 3. Define Graphics Frame Rendering Callback
 const renderFrame = (currentFps) => {
     fpsCounter.textContent = currentFps;
     
-    // This is where our CanvasView.render() matrix method will pass through.
-    // We will drop in the canvas matrix rendering logic here in our next ticket step.
+    // Execute matrix projection redraw command pass
+    view.render();
 };
 
-// 4. Instantiate and Boot Orchestration Core
 const gameEngine = new Engine(world, simulationUpdate, renderFrame);
 
-// Safe auto-start hook when DOM is ready
+// Safe auto-start hook when DOM is completely built
 window.addEventListener('DOMContentLoaded', () => {
     gameEngine.start();
-    console.log("Walking Skeleton Orchestration Running successfully.");
+    console.log("Walking Skeleton completely operational with interactive projection maps.");
 });
