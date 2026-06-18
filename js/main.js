@@ -1,9 +1,10 @@
 import { WorldState } from './core/WorldState.js';
 import { Engine } from './core/Engine.js';
+import { SaveSystem } from './core/SaveSystem.js';
 import { CanvasView } from './view/CanvasView.js';
 import { Input } from './view/Input.js';
+import { ToolManager } from './view/ToolManager.js';
 
-// Import New Logic Simulations Modules
 import { InfrastructureSimulator } from './simulation/InfrastructureSimulator.js';
 import { EconomicSimulator } from './simulation/EconomicSimulator.js';
 import { GrowthSimulator } from './simulation/GrowthSimulator.js';
@@ -11,55 +12,62 @@ import { GrowthSimulator } from './simulation/GrowthSimulator.js';
 // DOM Instrumentation Debug Nodes
 const fpsCounter = document.getElementById('fps-val');
 const tickCounter = document.getElementById('tick-val');
-const toolCounter = document.getElementById('tool-val');
+const fundsCounter = document.getElementById('funds-val');
+const toolLabel = document.getElementById('tool-val');
 
-// 1. Initialize core state data structural containers
+// 1. Initialize core system modules and infrastructure configurations
 const world = new WorldState(64, 64);
+const saveSystem = new SaveSystem();
 
-// 2. Initialize graphics viewing layer and input intercept pipelines
+// Attempt to restore progress data from local disk files before initiating loops
+const saveDetected = saveSystem.loadGame(world);
+if (!saveDetected) {
+    console.log("No previous save file detected. Starting simulation with clean canvas defaults.");
+}
+
 const view = new CanvasView('gameCanvas', world);
+const toolManager = new ToolManager();
 
-// 3. Instantiate simulation business engines
+// 2. Wire up interface toolbar click handlers
+const toolButtons = document.querySelectorAll('.tool-btn');
+toolButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        // Toggle selected state visually
+        toolButtons.forEach(b => b.classList.remove('active'));
+        
+        const targetedTool = e.target.getAttribute('data-tool');
+        if (toolManager.activeTool === targetedTool) {
+            toolManager.setTool('NONE');
+            toolLabel.textContent = "None";
+        } else {
+            toolManager.setTool(targetedTool);
+            e.target.classList.add('active');
+            toolLabel.textContent = targetedTool;
+        }
+    });
+});
+
+// 3. Connect viewport interaction mappings into tool logic pipelines
+const handleTileClick = (x, y) => {
+    const idx = world.getIndex(x, y);
+    toolManager.applyTool(world, idx);
+};
+const inputProcessor = new Input(view, handleTileClick);
+
+// 4. Instantiate background simulation frameworks modules
 const infrastructurePipeline = new InfrastructureSimulator();
 const economyPipeline = new EconomicSimulator();
 const growthPipeline = new GrowthSimulator();
 
-// Modifying click interaction handler to function as an Construction Tool
-const handleTileClick = (x, y) => {
-    const idx = world.getIndex(x, y);
-    const currentZone = world.zoneLayer[idx];
-    
-    // Explicit construction cycle tool:
-    if (currentZone === 0) {
-        world.zoneLayer[idx] = 4; // 1st click: Deploy Road
-    } else if (currentZone === 4) {
-        world.zoneLayer[idx] = 5; // 2nd click: Convert to Power Line
-    } else if (currentZone === 5) {
-        world.zoneLayer[idx] = 6; // 3rd click: Convert to Power Plant
-    } else if (currentZone === 6) {
-        // 4th click: Convert into a clean, empty Residential Zone (Type 1)
-        // to test spontaneous urban growth behaviors!
-        world.zoneLayer[idx] = 1; 
-        world.developmentLayer[idx] = 0; // Starts at zero density
-    } else {
-        // Reset back to completely empty space
-        world.zoneLayer[idx] = 0;
-        world.developmentLayer[idx] = 0;
-    }
-    
-    toolCounter.textContent = `Built Tool on (${x}, ${y}) - Structural Code: ${world.zoneLayer[idx]}`;
-};
-
-const inputProcessor = new Input(view, handleTileClick);
-
-// 4. Update the core Simulation Loop orchestrator pass
+// 5. Build loop processing configurations execution chains
 const simulationUpdate = (state) => {
-    // Sequentially step simulation engines across arrays
     infrastructurePipeline.update(state);
     economyPipeline.update(state);
     growthPipeline.update(state);
 
+    // Sync numeric structural properties straight into active UI layouts elements
     tickCounter.textContent = state.gameTickCount;
+    fundsCounter.textContent = state.funds;
 };
 
 const renderFrame = (currentFps) => {
@@ -69,7 +77,14 @@ const renderFrame = (currentFps) => {
 
 const gameEngine = new Engine(world, simulationUpdate, renderFrame);
 
+// 6. Connect State Resilience System Hooks to protect user data profiles safely
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        saveSystem.saveGame(world);
+    }
+});
+
 window.addEventListener('DOMContentLoaded', () => {
     gameEngine.start();
-    console.log("Simulations Engines completely unified and active.");
+    console.log("Engine fully initialized with integrated tools and automatic state serialization mechanisms.");
 });
