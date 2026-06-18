@@ -3,7 +3,7 @@
  * Handles map state binary serialization conversion passes and localStorage persistence operations.
  */
 export class SaveSystem {
-    constructor(saveKey = 'simcity_pwa_save_slot_0') {
+    constructor(saveKey = 'microcity_pwa_save_slot_0') {
         this.saveKey = saveKey;
     }
 
@@ -13,7 +13,7 @@ export class SaveSystem {
     saveGame(worldState) {
         try {
             const savePackage = {
-                $schema: "https://simcity-classic-pwa.engine/schemas/v1/save.json",
+                $schema: "https://microcity-pwa.engine/schemas/v1/save.json",
                 metadata: {
                     cityName: "New Metropolis",
                     saveTime: Date.now(),

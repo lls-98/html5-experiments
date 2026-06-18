@@ -6,7 +6,7 @@ export class ToolManager {
     constructor() {
         this.activeTool = 'NONE'; // Default state
 
-        // Cost Matrix matching SimCity Classic pricing scales
+        // Cost Matrix matching common pricing scales
         this.costs = {
             'RESIDENTIAL': 100,
             'COMMERCIAL': 100,

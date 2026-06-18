@@ -1,0 +1,23 @@
+{
+  "short_name": "MicroCity",
+  "name": "MicroCity PWA Engine",
+  "description": "An HTML5 retro city-building simulation operating on a decoupled fixed-timestep engine grid.",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#1a1a1a",
+  "theme_color": "#00ff00",
+  "display": "standalone",
+  "orientation": "landscape"
+}
