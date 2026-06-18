@@ -47,6 +47,21 @@ toolButtons.forEach(btn => {
     });
 });
 
+const viewToggleButton = document.getElementById('toggle-view-btn');
+viewToggleButton.addEventListener('click', () => {
+    if (view.viewMode === 'MAP') {
+        view.viewMode = 'GRAPH';
+        viewToggleButton.textContent = "VIEW: ANALYTICS";
+        viewToggleButton.style.background = "#00ff00";
+        viewToggleButton.style.color = "#000";
+    } else {
+        view.viewMode = 'MAP';
+        viewToggleButton.textContent = "VIEW: CITY GRID";
+        viewToggleButton.style.background = "#111";
+        viewToggleButton.style.color = "#00ff00";
+    }
+});
+
 // 3. Connect viewport interaction mappings into tool logic pipelines
 const handleTileClick = (x, y) => {
     const idx = world.getIndex(x, y);

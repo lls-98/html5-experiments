@@ -19,6 +19,12 @@ export class WorldState {
             industrial: 0.0
         };
 
+        // NEW: Historical Data Array for Graph Processing
+        // Pre-seeded with year 0 initial baseline statistics
+        this.historyLog = [
+            { year: 0, funds: 20000, population: 0, upkeep: 0 }
+        ];
+
         // Flat Layered Grid Buffers
         this.zoneLayer = new Uint8Array(this.mapSize);
         this.developmentLayer = new Uint8Array(this.mapSize);

@@ -74,6 +74,19 @@ export class BudgetLedger {
         console.log(`Revenue: +$${annualTaxRevenue} | Upkeep Expenses: -$${totalUpkeepBill}`);
         console.log(`Net Fiscal Shift: $${this.history.netProfit} | Treasury Total: $${worldState.funds}`);
 
+        // NEW: Append structural analytics snapshot row to history log
+        worldState.historyLog.push({
+            year: Math.floor(worldState.gameTickCount / this.ticksPerYear),
+            funds: worldState.funds,
+            population: activeTaxpayers,
+            upkeep: totalUpkeepBill
+        });
+
+        // Enforce rolling window constraint: Keep last 20 years of history entries max
+        if (worldState.historyLog.length > 20) {
+            worldState.historyLog.shift();
+        }
+        
         // 5. Check Deficit Emergency Boundaries
         if (worldState.funds < 0) {
             console.warn("MUNICIPAL BANKRUPTCY: City infrastructure is fracturing due to budget deficits!");
