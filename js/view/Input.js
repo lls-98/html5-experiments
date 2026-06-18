@@ -28,7 +28,9 @@ export class Input {
         this.isDragging = true;
         this.lastPointerX = e.clientX;
         this.lastPointerY = e.clientY;
-        target.setPointerCapture(e.pointerId);
+        
+        // FIXED: Using e.target instead of an undeclared global variable
+        e.target.setPointerCapture(e.pointerId);
     }
 
     _onPointerMove(e) {

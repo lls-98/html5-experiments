@@ -2,13 +2,16 @@
  * EconomicSimulator Class
  * Manages macro-scale metrics and system calculations.
  */
+
+import { BudgetLedger } from './BudgetLedger.js';
+
 export class EconomicSimulator {
     constructor() {
         this.frictionOverhead = 10; // Baseline drag component parameter (Kb)
     }
 
     /**
-     * Adjusts market conditions and structures treasury payouts
+     * Adjusts market conditions based on active structural densities
      */
     update(worldState) {
         let totalPop = 0;
@@ -43,12 +46,7 @@ export class EconomicSimulator {
         worldState.demand.residential = Math.max(-100, Math.min(100, worldState.demand.residential));
         worldState.demand.commercial = Math.max(-100, Math.min(100, worldState.demand.commercial));
         worldState.demand.industrial = Math.max(-100, Math.min(100, worldState.demand.industrial));
-
-        // 3. Tax Yield Financial Distribution Phases (Every 48 ticks / approx 12 game weeks)
-        if (worldState.gameTickCount % 48 === 0) {
-            const taxYield = Math.floor((totalPop + totalComm + totalInd) * 15 * worldState.taxRate);
-            worldState.funds += taxYield;
-            console.log(`Treasury updated. Yield calculated: +$${taxYield}. Current Balance: $${worldState.funds}`);
-        }
+        
+        // Note: Year-end tax distribution is now safely handled by BudgetLedger.js
     }
 }
