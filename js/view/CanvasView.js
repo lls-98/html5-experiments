@@ -64,7 +64,26 @@ export class CanvasView {
                     case 1: this.ctx.fillStyle = `rgb(0, ${100 + (density * 35)}, 0)`; break; // R
                     case 2: this.ctx.fillStyle = `rgb(0, 0, ${100 + (density * 35)})`; break; // C
                     case 3: this.ctx.fillStyle = `rgb(${120 + (density * 30)}, ${120 + (density * 30)}, 0)`; break; // I
-                    case 4: this.ctx.fillStyle = '#333333'; break; // Road
+                    case 4: // Road Network Node
+                        const trafficVolume = this.state.trafficLayer[idx];
+                        
+                        if (trafficVolume > 10) {
+                            // Toned-down multipliers to make the wave transition smooth and deliberate
+                            const baseFrequency = 1.2;
+                            const congestionFactor = (trafficVolume / 255) * 2.0;
+                            
+                            // FIXED: Using state.visualTime ties the wave directly to the running timeline loop
+                            const waveAngle = this.state.visualTime * (baseFrequency + congestionFactor);
+                            
+                            // Generates a smooth, balanced glow rhythm bound between 0.25 and 0.95 opacity
+                            const pulseAlpha = 0.25 + (Math.sin(waveAngle) + 1) * 0.35;
+                            
+                            this.ctx.fillStyle = `rgba(255, 0, 0, ${pulseAlpha})`;
+                        } else {
+                            // Empty or low-density streets remain a steady, static terminal gray
+                            this.ctx.fillStyle = '#2a2a2a';
+                        }
+                        break;
                     case 5: this.ctx.fillStyle = this.state.powerLayer[idx] === 1 ? '#00ffff' : '#442222'; break; // Wire
                     case 6: this.ctx.fillStyle = '#8800cc'; break; // Plant
                     default: this.ctx.fillStyle = '#171717'; break; // Empty

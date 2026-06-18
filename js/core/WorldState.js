@@ -12,6 +12,7 @@ export class WorldState {
         this.funds = 20000;
         this.taxRate = 0.07;
         this.gameTickCount = 0;
+        this.visualTime = 0;
         
         this.demand = {
             residential: 0.0,
@@ -30,7 +31,8 @@ export class WorldState {
         this.developmentLayer = new Uint8Array(this.mapSize);
         this.powerLayer = new Uint8Array(this.mapSize);
         this.pollutionLayer = new Uint8Array(this.mapSize);
-
+        // NEW: Traffic Density Buffer (0 = Empty/No Traffic, 255 = Maximum Gridlock)
+        this.trafficLayer = new Uint8Array(this.mapSize);
         this._generateMockMap();
     }
 

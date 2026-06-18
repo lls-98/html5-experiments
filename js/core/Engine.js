@@ -69,6 +69,15 @@ export class Engine {
 
         const startExecTime = performance.now();
         this.state.gameTickCount++;
+        
+        // NEW: Advance our custom animation clock based on active engine velocity.
+        // Paused state will naturally freeze this value since this loop stops running.
+        if (this.currentSimIntervalMs === 50) {
+            this.state.visualTime += 0.5; // High speed advance rate
+        } else {
+            this.state.visualTime += 0.1; // Normal speed baseline advance rate
+        }
+
         this.onSimulationTick(this.state);
         const endExecTime = performance.now();
         const executionDuration = endExecTime - startExecTime;

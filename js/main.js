@@ -9,6 +9,7 @@ import { InfrastructureSimulator } from './simulation/InfrastructureSimulator.js
 import { EconomicSimulator } from './simulation/EconomicSimulator.js';
 import { GrowthSimulator } from './simulation/GrowthSimulator.js';
 import { BudgetLedger } from './simulation/BudgetLedger.js';
+import { TrafficSimulator } from './simulation/TrafficSimulator.js';
 
 // DOM Instrumentation Debug Nodes
 const fpsCounter = document.getElementById('fps-val');
@@ -119,6 +120,7 @@ const infrastructurePipeline = new InfrastructureSimulator();
 const economyPipeline = new EconomicSimulator();
 const growthPipeline = new GrowthSimulator();
 const budgetPipeline = new BudgetLedger();
+const trafficPipeline = new TrafficSimulator();
 
 // 5. Build loop processing configurations execution chains
 const simulationUpdate = (state) => {
@@ -126,7 +128,8 @@ const simulationUpdate = (state) => {
     economyPipeline.update(state);
     growthPipeline.update(state);
     budgetPipeline.update(state);
-
+    trafficPipeline.update(state);
+    
     // Sync numeric structural properties straight into active UI layouts elements
     tickCounter.textContent = state.gameTickCount;
     fundsCounter.textContent = state.funds;
