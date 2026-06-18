@@ -12,7 +12,18 @@
             <h3>Engine Debug</h3>
             <div>FPS: <span id="fps-val">0</span></div>
             <div>Sim Ticks: <span id="tick-val">0</span></div>
+            <div>Funds: $<span id="funds-val">0</span></div>
             <div>Active Tool: <span id="tool-val">None</span></div>
+        </div>
+
+        <div id="toolbar">
+            <button class="tool-btn" data-tool="RESIDENTIAL" title="Residential Zone ($100)">R</button>
+            <button class="tool-btn" data-tool="COMMERCIAL" title="Commercial Zone ($100)">C</button>
+            <button class="tool-btn" data-tool="INDUSTRIAL" title="Industrial Zone ($100)">I</button>
+            <button class="tool-btn" data-tool="ROAD" title="Road Network ($20)">Road</button>
+            <button class="tool-btn" data-tool="POWER_LINE" title="Power Line ($5)">Wire</button>
+            <button class="tool-btn" data-tool="POWER_PLANT" title="Coal Power Plant ($3000)">Plant</button>
+            <button class="tool-btn" data-tool="BULLDOZER" title="Bulldozer Demolish ($1)">Clear</button>
         </div>
     </div>
     <canvas id="gameCanvas"></canvas>

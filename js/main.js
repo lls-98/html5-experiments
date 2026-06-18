@@ -27,17 +27,23 @@ const growthPipeline = new GrowthSimulator();
 // Modifying click interaction handler to function as an Construction Tool
 const handleTileClick = (x, y) => {
     const idx = world.getIndex(x, y);
+    const currentZone = world.zoneLayer[idx];
     
-    // Cyclical Construction Tool: 
-    // Cycle empty cell into Road (4), PowerLine (5), or Coal Power Plant (6)
-    if (world.zoneLayer[idx] === 0) {
-        world.zoneLayer[idx] = 4; // Deploy Road
-    } else if (world.zoneLayer[idx] === 4) {
-        world.zoneLayer[idx] = 5; // Convert to PowerLine
-    } else if (world.zoneLayer[idx] === 5) {
-        world.zoneLayer[idx] = 6; // Convert to Power Plant
+    // Explicit construction cycle tool:
+    if (currentZone === 0) {
+        world.zoneLayer[idx] = 4; // 1st click: Deploy Road
+    } else if (currentZone === 4) {
+        world.zoneLayer[idx] = 5; // 2nd click: Convert to Power Line
+    } else if (currentZone === 5) {
+        world.zoneLayer[idx] = 6; // 3rd click: Convert to Power Plant
+    } else if (currentZone === 6) {
+        // 4th click: Convert into a clean, empty Residential Zone (Type 1)
+        // to test spontaneous urban growth behaviors!
+        world.zoneLayer[idx] = 1; 
+        world.developmentLayer[idx] = 0; // Starts at zero density
     } else {
-        world.zoneLayer[idx] = 0; // Bulldozer clear
+        // Reset back to completely empty space
+        world.zoneLayer[idx] = 0;
         world.developmentLayer[idx] = 0;
     }
     
