@@ -98,3 +98,28 @@ html, body {
     color: #000;
     box-shadow: 0 0 10px #00ff00;
 }
+
+/* Append to the bottom of css/main.css */
+.sys-btn {
+    background: #111;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 6px 8px;
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.1s ease;
+    flex: 1;
+    text-align: center;
+}
+
+.sys-btn:hover {
+    background: rgba(0, 255, 0, 0.15);
+}
+
+.sys-btn.active {
+    background: #00ff00;
+    color: #000;
+}

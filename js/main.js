@@ -8,6 +8,7 @@ import { ToolManager } from './view/ToolManager.js';
 import { InfrastructureSimulator } from './simulation/InfrastructureSimulator.js';
 import { EconomicSimulator } from './simulation/EconomicSimulator.js';
 import { GrowthSimulator } from './simulation/GrowthSimulator.js';
+import { BudgetLedger } from './simulation/BudgetLedger.js';
 
 // DOM Instrumentation Debug Nodes
 const fpsCounter = document.getElementById('fps-val');
@@ -62,6 +63,50 @@ viewToggleButton.addEventListener('click', () => {
     }
 });
 
+// Inside js/main.js -> Timeline Control Listeners Block
+
+// 1. Core Speed Modulation Array Handling
+const speedButtons = document.querySelectorAll('.speed-btn');
+speedButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        speedButtons.forEach(b => b.classList.remove('active'));
+        
+        const selectedSpeed = e.target.getAttribute('data-speed');
+        e.target.classList.add('active');
+        
+        // Pass speed mode token command straight to engine execution core
+        gameEngine.setSpeed(selectedSpeed);
+    });
+});
+
+// 2. Destructive Reset Sequence Initialization
+const resetGameButton = document.getElementById('reset-game-btn');
+resetGameButton.addEventListener('click', () => {
+    const confirmation = confirm("CRITICAL COMMAND WARNING:\nThis operation will purge current grid metrics, wipe local memory arrays, and reinitialize data models to original defaults.\n\nProceed with compilation sequence?");
+    
+    if (confirmation) {
+        // Clear saved file from localStorage to prevent re-fetching old state loops on refresh
+        localStorage.removeItem(saveSystem.saveKey);
+        
+        // Wipe and restore State values
+        world.resetToDefaultState();
+        
+        // Reset speed tracking UI state variables back to normal default settings
+        speedButtons.forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-speed="NORMAL"]').classList.add('active');
+        
+        // Signal the engine components loop to safely reboot
+        gameEngine.reset(world);
+        
+        // Force rendering canvas reset updates instantly
+        view.panX = 40;
+        view.panY = 40;
+        view.render();
+        
+        console.log("Core system reinitialized cleanly. Mainframe loops online.");
+    }
+});
+
 // 3. Connect viewport interaction mappings into tool logic pipelines
 const handleTileClick = (x, y) => {
     const idx = world.getIndex(x, y);
@@ -73,12 +118,14 @@ const inputProcessor = new Input(view, handleTileClick);
 const infrastructurePipeline = new InfrastructureSimulator();
 const economyPipeline = new EconomicSimulator();
 const growthPipeline = new GrowthSimulator();
+const budgetPipeline = new BudgetLedger();
 
 // 5. Build loop processing configurations execution chains
 const simulationUpdate = (state) => {
     infrastructurePipeline.update(state);
     economyPipeline.update(state);
     growthPipeline.update(state);
+    budgetPipeline.update(state);
 
     // Sync numeric structural properties straight into active UI layouts elements
     tickCounter.textContent = state.gameTickCount;

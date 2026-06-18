@@ -25,6 +25,11 @@ export class BudgetLedger {
      * Monitors the engine timeline clock and runs the fiscal evaluation process
      */
     update(worldState) {
+        // TEMP DIAGNOSTIC LOG: Remove this once we verify tracking
+        if (worldState.gameTickCount % 100 === 0) {
+            console.log(`Ledger Heartbeat Check - Current Engine Tick: ${worldState.gameTickCount}`);
+        }
+
         // Execute only on a full fiscal year loop milestone
         if (worldState.gameTickCount % this.ticksPerYear !== 0) return;
 
@@ -74,12 +79,18 @@ export class BudgetLedger {
         console.log(`Revenue: +$${annualTaxRevenue} | Upkeep Expenses: -$${totalUpkeepBill}`);
         console.log(`Net Fiscal Shift: $${this.history.netProfit} | Treasury Total: $${worldState.funds}`);
 
-        // NEW: Append structural analytics snapshot row to history log
+        const currentYear = Math.floor(worldState.gameTickCount / this.ticksPerYear);
+
+        // Explicit arithmetic checks to prevent tracking polluted states
+        const cleanFunds = isNaN(worldState.funds) || !isFinite(worldState.funds) ? 0 : Math.floor(worldState.funds);
+        const cleanPop = isNaN(activeTaxpayers) || !isFinite(activeTaxpayers) ? 0 : Math.floor(activeTaxpayers);
+        const cleanUpkeep = isNaN(totalUpkeepBill) || !isFinite(totalUpkeepBill) ? 0 : Math.floor(totalUpkeepBill);
+
         worldState.historyLog.push({
-            year: Math.floor(worldState.gameTickCount / this.ticksPerYear),
-            funds: worldState.funds,
-            population: activeTaxpayers,
-            upkeep: totalUpkeepBill
+            year: currentYear,
+            funds: cleanFunds,
+            population: cleanPop,
+            upkeep: cleanUpkeep
         });
 
         // Enforce rolling window constraint: Keep last 20 years of history entries max

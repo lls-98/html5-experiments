@@ -67,4 +67,34 @@ export class WorldState {
             }
         }
     }
+
+    /**
+     * Resets the entire object layer footprint and rolls metrics back to starting variables
+     */
+    resetToDefaultState() {
+        this.funds = 20000;
+        this.taxRate = 0.07;
+        this.gameTickCount = 0;
+        
+        this.demand = {
+            residential: 0.0,
+            commercial: 0.0,
+            industrial: 0.0
+        };
+
+        // Re-seed historical logging matrix entries back to clean year 0 defaults
+        this.historyLog = [
+            { year: 0, funds: 20000, population: 0, upkeep: 0 }
+        ];
+
+        // Zero out binary typed array memory allocations completely
+        this.zoneLayer.fill(0);
+        this.developmentLayer.fill(0);
+        this.powerLayer.fill(0);
+        this.pollutionLayer.fill(0);
+
+        // Regenerate original grid framework checkerboard configurations
+        this._generateMockMap();
+        console.log("Memory grids wiped clean and re-seeded successfully.");
+    }
 }

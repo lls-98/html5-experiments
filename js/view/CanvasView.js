@@ -97,7 +97,6 @@ export class CanvasView {
         this.ctx.strokeStyle = '#004400';
         this.ctx.lineWidth = 1;
         
-        // Draw horizontal grid divider lines lines
         for (let i = 0; i <= 4; i++) {
             const yOffset = margin + (graphHeight * (i / 4));
             this.ctx.beginPath();
@@ -106,9 +105,8 @@ export class CanvasView {
             this.ctx.stroke();
         }
 
-        const dataPoints = this.state.historyLog;
+        const dataPoints = this.state.historyLog || [];
         if (dataPoints.length < 2) {
-            // Insufficient historical records messaging catch
             this.ctx.fillStyle = '#00ff00';
             this.ctx.font = '16px monospace';
             this.ctx.textAlign = 'center';
@@ -116,39 +114,53 @@ export class CanvasView {
             return;
         }
 
-        // 2. Discover maximum boundaries scales to normalize vector layout math
-        const maxFunds = Math.max(...dataPoints.map(d => Math.abs(d.funds)), 10000);
-        const maxPop = Math.max(...dataPoints.map(d => d.population), 100);
+        // 2. HARDENED BOUNDARY AUDIT: Strip out anomalies before passing to Math.max
+        const validFunds = dataPoints.map(d => Math.abs(d.funds)).filter(v => !isNaN(v) && isFinite(v));
+        const validPop = dataPoints.map(d => d.population).filter(v => !isNaN(v) && isFinite(v));
+
+        const maxFunds = validFunds.length > 0 ? Math.max(...validFunds, 10000) : 10000;
+        const maxPop = validPop.length > 0 ? Math.max(...validPop, 100) : 100;
 
         // 3. Mathematical Vector Data Mapping Plotter
         const drawVectorLine = (valueExtractor, maxScaleBound, color) => {
+            // Absolute division-by-zero sentinel protection
+            const safeScale = maxScaleBound <= 0 || isNaN(maxScaleBound) ? 1 : maxScaleBound;
+            
             this.ctx.strokeStyle = color;
             this.ctx.lineWidth = 2;
             this.ctx.beginPath();
 
+            let hasMovedToFirstPoint = false;
+
             for (let i = 0; i < dataPoints.length; i++) {
-                const xPos = margin + (i / (dataPoints.length - 1)) * graphWidth;
+                const rawVal = valueExtractor(dataPoints[i]);
                 
-                // Normalizing calculation scaling: invert height layout coordinates because Canvas 0,0 sits top-left
-                const normalizedValue = valueExtractor(dataPoints[i]) / maxScaleBound;
+                // Skip rendering individual segment if corrupted data row is found
+                if (isNaN(rawVal) || !isFinite(rawVal)) continue;
+
+                const xPos = margin + (i / (dataPoints.length - 1)) * graphWidth;
+                const normalizedValue = rawVal / safeScale;
                 const yPos = (margin + graphHeight) - (normalizedValue * graphHeight);
 
-                if (i === 0) this.ctx.moveTo(xPos, yPos);
-                else this.ctx.lineTo(xPos, yPos);
+                if (!hasMovedToFirstPoint) {
+                    this.ctx.moveTo(xPos, yPos);
+                    hasMovedToFirstPoint = true;
+                } else {
+                    this.ctx.lineTo(xPos, yPos);
+                }
             }
             this.ctx.stroke();
         };
 
-        // Plot Line Data Sets: 
-        drawVectorLine(d => d.funds, maxFunds, '#00ff00');      // Bright Green = Treasury Liquid Balance
-        drawVectorLine(d => d.population, maxPop, '#ff00ff'); // Magenta Line = Dense Civil Population count
+        // Plot Line Data Sets safely
+        drawVectorLine(d => d.funds, maxFunds, '#00ff00');      
+        drawVectorLine(d => d.population, maxPop, '#ff00ff'); 
 
         // 4. Render Terminal Metrics Text Legends
         this.ctx.fillStyle = '#00ff00';
         this.ctx.font = '12px monospace';
         this.ctx.textAlign = 'left';
 
-        // Header info metadata strings
         this.ctx.fillText(`ANALYTICS ENGINE DATA SCOPE: ROLLING FISCAL LOG HISTORY`, margin, margin - 40);
         
         this.ctx.fillStyle = '#00ff00';
@@ -156,7 +168,6 @@ export class CanvasView {
         this.ctx.fillStyle = '#ff00ff';
         this.ctx.fillText(`[── MAGENTA: MUNICIPAL POPULATION (MAX: ${maxPop} POP Units)]`, margin + 300, margin - 15);
 
-        // Axis boundary indicators
         this.ctx.fillStyle = '#004400';
         this.ctx.textAlign = 'right';
         this.ctx.fillText(`Y-AXIS RANGE CEILING [100%]`, this.canvas.width - margin, margin - 8);

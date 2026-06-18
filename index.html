@@ -9,13 +9,21 @@
 <body>
     <div id="ui-container">
         <div id="debug-panel">
-            <h3>Engine Debug</h3>
+            <h3>Engine Controls</h3>
+            <div style="margin-bottom: 8px; display: flex; gap: 4px;">
+                <button class="sys-btn speed-btn" data-speed="PAUSED" title="Pause Loops">‖ PAUSE</button>
+                <button class="sys-btn speed-btn active" data-speed="NORMAL" title="Normal 4Hz">1x</button>
+                <button class="sys-btn speed-btn" data-speed="HYPER" title="Fast-Forward 20Hz">4x >></button>
+            </div>
+            <button id="reset-game-btn" class="sys-btn" style="width: 100%; color: #ff3333; border-color: #aa2222; margin-bottom: 8px;" title="Purge Core State Matrix">⚠️ RESET ENGINE</button>
+
+            <h3 style="margin-top: 12px;">Diagnostic Data</h3>
             <div>FPS: <span id="fps-val">0</span></div>
             <div>Sim Ticks: <span id="tick-val">0</span></div>
             <div>Funds: $<span id="funds-val">0</span></div>
             <div>Active Tool: <span id="tool-val">None</span></div>
             <hr style="border:0; border-top: 1px solid #004400; margin: 8px 0;">
-            <button id="toggle-view-btn" style="background:#111; color:#00ff00; border:1px solid #00ff00; width:100%; padding:6px; cursor:pointer; font-family:monospace; font-size:11px; font-weight:bold; border-radius:3px;">VIEW: CITY GRID</button>
+            <button id="toggle-view-btn" class="sys-btn" style="width:100%;">VIEW: CITY GRID</button>
         </div>
 
         <div id="toolbar">

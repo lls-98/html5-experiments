@@ -1,6 +1,6 @@
 /**
  * Engine Class
- * Managing the high-performance detached execution cycles.
+ * Managing the high-performance detached execution cycles and time-dilation metrics.
  */
 export class Engine {
     constructor(worldState, simulationCallback, renderCallback) {
@@ -10,9 +10,9 @@ export class Engine {
 
         this.isRunning = false;
         
-        // Simulation Frequency Parameters (4Hz)
-        this.simIntervalMs = 250; 
-        this.lastSimTickTime = 0;
+        // Simulation Frequency Parameters (Default 4Hz / 250ms per tick)
+        this.baseSimIntervalMs = 250; 
+        this.currentSimIntervalMs = 250; 
         this.simTimeoutId = null;
 
         // Debug Performance Counters
@@ -32,41 +32,54 @@ export class Engine {
         this.lastSimTickTime = currentTime;
         this.lastFpsUpdateTime = currentTime;
 
-        // Boot loops
         this._runSimulationLoop();
         this._runRenderLoop(currentTime);
+    }
+
+    /**
+     * Dynamically alters the time dilation scale of the simulation loop
+     * @param {string} speedMode - 'PAUSED', 'NORMAL', or 'HYPER'
+     */
+    setSpeed(speedMode) {
+        if (this.simTimeoutId) clearTimeout(this.simTimeoutId);
+
+        switch (speedMode) {
+            case 'PAUSED':
+                this.currentSimIntervalMs = -1; // Flag to halt progression execution
+                console.log("Simulation thread PAUSED.");
+                break;
+            case 'NORMAL':
+                this.currentSimIntervalMs = this.baseSimIntervalMs;
+                console.log("Simulation frequency calibrated to standard 4Hz operation matrix.");
+                if (this.isRunning) this._runSimulationLoop();
+                break;
+            case 'HYPER':
+                this.currentSimIntervalMs = 50; // Accelerated 20Hz loop pass sequence
+                console.log("Simulation frequency pushed to HYPER 20Hz warp execution pattern.");
+                if (this.isRunning) this._runSimulationLoop();
+                break;
+        }
     }
 
     /**
      * Self-correcting timeout sequence maintaining strict simulation timetables
      */
     _runSimulationLoop() {
-        if (!this.isRunning) return;
+        if (!this.isRunning || this.currentSimIntervalMs === -1) return;
 
         const startExecTime = performance.now();
-        
-        // Step State Clock
         this.state.gameTickCount++;
-        
-        // Fire external logic passes
         this.onSimulationTick(this.state);
-
         const endExecTime = performance.now();
         const executionDuration = endExecTime - startExecTime;
 
-        // Self-correcting loop mathematics accounting for calculation overhead
-        const nextDelay = Math.max(0, this.simIntervalMs - executionDuration);
-        
+        const nextDelay = Math.max(0, this.currentSimIntervalMs - executionDuration);
         this.simTimeoutId = setTimeout(() => this._runSimulationLoop(), nextDelay);
     }
 
-    /**
-     * Visual execution channel coupled to native hardware repaint intervals
-     */
     _runRenderLoop(timestamp) {
         if (!this.isRunning) return;
 
-        // Track FPS metrics
         this.frameCount++;
         if (timestamp - this.lastFpsUpdateTime >= 1000) {
             this.fps = this.frameCount;
@@ -74,9 +87,7 @@ export class Engine {
             this.lastFpsUpdateTime = timestamp;
         }
 
-        // Fire rendering layer pass
         this.onRenderFrame(this.fps);
-
         requestAnimationFrame((time) => this._runRenderLoop(time));
     }
 
@@ -86,5 +97,15 @@ export class Engine {
     stop() {
         this.isRunning = false;
         if (this.simTimeoutId) clearTimeout(this.simTimeoutId);
+    }
+
+    /**
+     * Resets execution parameters to default initial state variables
+     */
+    reset(newWorldState) {
+        this.stop();
+        this.state = newWorldState;
+        this.currentSimIntervalMs = this.baseSimIntervalMs;
+        this.start();
     }
 }

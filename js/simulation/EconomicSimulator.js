@@ -42,6 +42,12 @@ export class EconomicSimulator {
         const industrialTradeRatio = (totalPop + totalComm) / (totalInd + 1);
         worldState.demand.industrial = industrialTradeRatio * (1.0 - worldState.taxRate);
 
+        const economicVolatility = (Math.random() - 0.5) * 2.0;
+
+        worldState.demand.residential += economicVolatility;
+        worldState.demand.commercial += economicVolatility;
+        worldState.demand.industrial += economicVolatility;
+        
         // Clamping Output Bounds Constraints (-100 to +100)
         worldState.demand.residential = Math.max(-100, Math.min(100, worldState.demand.residential));
         worldState.demand.commercial = Math.max(-100, Math.min(100, worldState.demand.commercial));
@@ -49,4 +55,5 @@ export class EconomicSimulator {
         
         // Note: Year-end tax distribution is now safely handled by BudgetLedger.js
     }
+    
 }
