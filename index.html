@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacroCity: Vector Simulation Engine</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            background-color: #050505; 
+            font-family: 'Courier New', Courier, monospace;
+            color: #33ff33;
+            overflow: hidden;
+        }
+        #app-container { display: flex; width: 100vw; height: 100vh; }
+        
+        /* The Living Painting Display */
+        #canvas-container { 
+            flex: 1; 
+            position: relative; 
+            background-color: #000000;
+            /* Retro CRT bloom effect using CSS filters */
+            filter: drop-shadow(0 0 1px rgba(51, 255, 51, 0.4)) contrast(1.2);
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Control & Stat Panel */
+        #sidebar { 
+            width: 320px; 
+            height: 100%; 
+            border-left: 2px solid #33ff33; 
+            background-color: #030c03;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.1);
+        }
+        h2 { font-size: 1.2rem; text-shadow: 0 0 5px #33ff33; letter-spacing: 1px; }
+        hr { border: 0; border-top: 1px dashed #33ff33; margin: 5px 0; }
+        .metric-group { background: rgba(0, 20, 0, 0.4); padding: 10px; border: 1px solid #114411; }
+        .gwi-display { font-size: 2rem; font-weight: bold; text-align: center; margin-top: 5px; animation: blink 2s infinite alternate; }
+        ul { list-style: none; padding-left: 5px; }
+        li { margin: 8px 0; font-size: 0.9rem; }
+        span { float: right; font-weight: bold; }
+        @keyframes blink { from { opacity: 0.7; } to { opacity: 1; text-shadow: 0 0 10px #33ff33; } }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div id="canvas-container">
+            <canvas id="city-canvas"></canvas>
+        </div>
+        <aside id="sidebar">
+            <h2>MACRO-SYS METROPOLIS</h2>
+            <hr>
+            <div class="metric-group">
+                <h3>GROSS WELL-BEING (GWI)</h3>
+                <div class="gwi-display" id="gwi-value">INIT...</div>
+            </div>
+            <div class="metric-group">
+                <h4>VITAL SYSTEM INDICES</h4>
+                <ul>
+                    <li>Health Security: <span id="stat-health">0.0%</span></li>
+                    <li>Time Wealth: <span id="stat-time">0.0%</span></li>
+                    <li>Housing Stability: <span id="stat-housing">0.0%</span></li>
+                    <li>Cultural Vibrancy: <span id="stat-culture">0.0%</span></li>
+                </ul>
+            </div>
+            <div class="metric-group">
+                <h4>METRICS & DEMOGRAPHICS</h4>
+                <ul>
+                    <li>Population: <span id="stat-pop">0</span></li>
+                    <li>Stored Wealth: <span id="stat-wealth">§0</span></li>
+                    <li>Engine State: <span id="stat-engine" style="color: #ffcc00;">SYNCING</span></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>
