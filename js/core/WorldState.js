@@ -56,18 +56,14 @@ export class WorldState {
      * to verify layer reads in the Walking Skeleton stage.
      */
     _generateMockMap() {
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                const idx = this.getIndex(x, y);
-                // Create checkerboard zones: alternating types 0, 1, 2, 3
-                if ((x + y) % 2 === 0) {
-                    this.zoneLayer[idx] = (x % 3) + 1; // R, C, or I
-                    this.developmentLayer[idx] = Math.floor(Math.random() * 5); // Mock density states 0-4
-                } else {
-                    this.zoneLayer[idx] = 0; // Empty
-                }
-            }
-        }
+        // Zero out all flat layer buffers completely to guarantee a blank canvas
+        this.zoneLayer.fill(0);
+        this.developmentLayer.fill(0);
+        this.powerLayer.fill(0);
+        this.pollutionLayer.fill(0);
+        this.trafficLayer.fill(0);
+
+        console.log("Mainframe initialized: Map grid memory buffers cleared to 0.");
     }
 
     /**

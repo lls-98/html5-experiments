@@ -16,6 +16,7 @@ const fpsCounter = document.getElementById('fps-val');
 const tickCounter = document.getElementById('tick-val');
 const fundsCounter = document.getElementById('funds-val');
 const toolLabel = document.getElementById('tool-val');
+const popCounter = document.getElementById('pop-val');
 
 // 1. Initialize core system modules and infrastructure configurations
 const world = new WorldState(64, 64);
@@ -142,21 +143,33 @@ const generateRetroBarString = (demandValue) => {
 };
 
 const simulationUpdate = (state) => {
-    // Run the simulation pipeline passes sequentially
+    // Run the simulation updates across processing engines
     infrastructurePipeline.update(state);
     economyPipeline.update(state);
     growthPipeline.update(state);
     budgetPipeline.update(state);
     trafficPipeline.update(state);
 
-    // NEW: Render the RCI Mainframe Indicators 
+    // Render the RCI indicators
     rBar.textContent = generateRetroBarString(state.demand.residential);
     cBar.textContent = generateRetroBarString(state.demand.commercial);
     iBar.textContent = generateRetroBarString(state.demand.industrial);
 
+    // NEW: Real-Time Census Tally Sweep Pass
+    let totalPopulationCount = 0;
+    const totalCells = state.mapSize;
+    
+    for (let i = 0; i < totalCells; i++) {
+        // Look for residential zone types (zone code 1)
+        if (state.zoneLayer[i] === 1) {
+            totalPopulationCount += state.developmentLayer[i];
+        }
+    }
+
     // Sync numeric structural properties straight into active UI layouts elements
     tickCounter.textContent = state.gameTickCount;
     fundsCounter.textContent = state.funds;
+    popCounter.textContent = totalPopulationCount; // <--- NEW: Output raw census count
 };
 
 const renderFrame = (currentFps) => {
