@@ -17,6 +17,22 @@
             </div>
             <button id="reset-game-btn" class="sys-btn" style="width: 100%; color: #ff3333; border-color: #aa2222; margin-bottom: 8px;" title="Purge Core State Matrix">⚠️ RESET ENGINE</button>
 
+            <h3 style="margin-top: 12px;">Market Demand (RCI)</h3>
+            <div style="font-family: monospace; font-size: 11px; background: #050a05; border: 1px solid #004400; padding: 6px; border-radius: 3px; line-height: 1.4;">
+                <div style="display: flex; align-items: center;">
+                    <span style="color: #00ff00; width: 15px; font-weight: bold;">R:</span>
+                    <span id="r-demand-bar" style="color: #00ff00; letter-spacing: 1px;">▱▱▱▱▱▱▱▱▱▱</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span style="color: #3388ff; width: 15px; font-weight: bold;">C:</span>
+                    <span id="c-demand-bar" style="color: #3388ff; letter-spacing: 1px;">▱▱▱▱▱▱▱▱▱▱</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span style="color: #ffff00; width: 15px; font-weight: bold;">I:</span>
+                    <span id="i-demand-bar" style="color: #ffff00; letter-spacing: 1px;">▱▱▱▱▱▱▱▱▱▱</span>
+                </div>
+            </div>
+
             <h3 style="margin-top: 12px;">Diagnostic Data</h3>
             <div>FPS: <span id="fps-val">0</span></div>
             <div>Sim Ticks: <span id="tick-val">0</span></div>

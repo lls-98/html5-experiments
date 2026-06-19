@@ -122,14 +122,38 @@ const growthPipeline = new GrowthSimulator();
 const budgetPipeline = new BudgetLedger();
 const trafficPipeline = new TrafficSimulator();
 
-// 5. Build loop processing configurations execution chains
+// Cache our new UI text targets out of the DOM layout
+const rBar = document.getElementById('r-demand-bar');
+const cBar = document.getElementById('c-demand-bar');
+const iBar = document.getElementById('i-demand-bar');
+
+/**
+ * Utility: Converts an economy variable (-100 to 100) into a 10-block phosphor readout
+ */
+const generateRetroBarString = (demandValue) => {
+    // Map -100...100 seamlessly to an index range of 0...10 segments
+    const normalizedScale = (demandValue + 100) / 200;
+    const filledSegmentsCount = Math.max(0, Math.min(10, Math.round(normalizedScale * 10)));
+    
+    const filledChar = "■"; // Solid terminal phosphor block
+    const emptyChar = "▱";  // Wireframe outline background block
+    
+    return filledChar.repeat(filledSegmentsCount) + emptyChar.repeat(10 - filledSegmentsCount);
+};
+
 const simulationUpdate = (state) => {
+    // Run the simulation pipeline passes sequentially
     infrastructurePipeline.update(state);
     economyPipeline.update(state);
     growthPipeline.update(state);
     budgetPipeline.update(state);
     trafficPipeline.update(state);
-    
+
+    // NEW: Render the RCI Mainframe Indicators 
+    rBar.textContent = generateRetroBarString(state.demand.residential);
+    cBar.textContent = generateRetroBarString(state.demand.commercial);
+    iBar.textContent = generateRetroBarString(state.demand.industrial);
+
     // Sync numeric structural properties straight into active UI layouts elements
     tickCounter.textContent = state.gameTickCount;
     fundsCounter.textContent = state.funds;
