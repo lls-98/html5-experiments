@@ -1,4 +1,9 @@
-// sim-worker.js - Core High-Speed Math Engine
+// sim-worker.js - Multi-Threaded Simulation Router
+
+// Synchronously load core utilities and system sub-modules
+self.importScripts('./core/matrix.js');
+// (Future system imports will go here, e.g., ./systems/demographics.js)
+
 let MAP_W = 250; 
 let MAP_H = 250;
 let totalCells = MAP_W * MAP_H;
@@ -12,7 +17,6 @@ self.onmessage = function(e) {
         MAP_H = e.data.height;
         totalCells = MAP_W * MAP_H;
 
-        // Allocate Shared Array Memory: 1 byte per cell for zones, 4 bytes for floats
         zoneBuffer    = new SharedArrayBuffer(totalCells * 1); 
         densityBuffer = new SharedArrayBuffer(totalCells * 4); 
         wealthBuffer  = new SharedArrayBuffer(totalCells * 4); 
@@ -21,15 +25,14 @@ self.onmessage = function(e) {
         densityGrid = new Float32Array(densityBuffer);
         wealthGrid  = new Float32Array(wealthBuffer);
 
-        // Seed some random data just to verify the memory bridge works
+        // Seed initial layout matrix using our imported ZONES enum
         for (let i = 0; i < totalCells; i++) {
-            if (Math.random() > 0.85) {
-                zoneGrid[i] = Math.floor(Math.random() * 5) + 1; // Random zones 1-5
-                densityGrid[i] = Math.random(); // Arbitrary starting densities
+            if (Math.random() > 0.90) {
+                zoneGrid[i] = ZONES.MIXED_MED; // Let's seed progressive mixed zones!
+                densityGrid[i] = Math.random(); 
             }
         }
 
-        // Pass memory layout references back to UI thread
         self.postMessage({
             cmd: 'initialized',
             zoneBuffer: zoneBuffer,
@@ -37,23 +40,21 @@ self.onmessage = function(e) {
             wealthBuffer: wealthBuffer
         });
 
-        // Run the background simulation engine tick at 1Hz
         setInterval(tickSimulation, 1000);
     }
 };
 
 function tickSimulation() {
-    // Basic test calculations to simulate a shifting environment
+    // Loop through our data layers using modular systems
     for (let i = 0; i < totalCells; i++) {
-        if (zoneGrid[i] > 0) {
-            // Cellular automatic fluctuations
-            densityGrid[i] += (Math.random() - 0.49) * 0.02;
-            if (densityGrid[i] < 0) densityGrid[i] = 0;
-            if (densityGrid[i] > 1) densityGrid[i] = 1;
-        }
+        if (zoneGrid[i] === ZONES.EMPTY) continue;
+        
+        // Simulating subtle growth fluctuations for now
+        densityGrid[i] += (Math.random() - 0.49) * 0.01;
+        if (densityGrid[i] < 0) densityGrid[i] = 0;
+        if (densityGrid[i] > 1) densityGrid[i] = 1;
     }
 
-    // Evaluate macro status checks
     let popSum = 0;
     for(let i = 0; i < totalCells; i++) {
         popSum += densityGrid[i];
@@ -61,7 +62,7 @@ function tickSimulation() {
 
     self.postMessage({
         cmd: 'updateStats',
-        population: Math.floor(popSum * 1250), // Scaling factor (1 density = 1250 people)
-        gwi: 50.0 + (Math.random() * 5) // Mock shifting indicator loop
+        population: Math.floor(popSum * 1250),
+        gwi: 62.5
     });
 }
