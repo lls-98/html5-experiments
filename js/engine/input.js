@@ -1,4 +1,4 @@
-// input.js - Fixed Modular State Tracking
+// input.js - Harmonized Vector Polygon Plotting and Snapped Road Lines
 import { camera, screenToGrid } from './camera.js';
 
 let startGridPos = null;   
@@ -10,7 +10,10 @@ let startMouseX = 0;
 let startMouseY = 0;
 let onPaintCallback = null;
 
-// Clean, non-circular state reference
+// State machines for Polygon Vector Tracking
+let activePolygonVertices = [];
+const SNAP_RADIUS_CELLS = 1.2; 
+
 let currentBrush = "ROAD";
 
 export function initInputHandlers(canvas, onPaint) {
@@ -18,41 +21,59 @@ export function initInputHandlers(canvas, onPaint) {
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Shift') isDrawingMode = true;
+        
+        if (e.key === 'Escape') {
+            activePolygonVertices = [];
+            startGridPos = null;
+        }
     });
 
     window.addEventListener('keyup', (e) => {
         if (e.key === 'Shift') {
             isDrawingMode = false;
-            startGridPos = null; 
+            startGridPos = null; // Clear active road lines on Shift release
         }
     });
 
     canvas.addEventListener('mousedown', (e) => {
         const gridPos = getTargetGridCell(e, canvas);
 
-        // Pan Map Trigger
+        // Map Panning Mode Logic
         if (e.button === 1 || (e.button === 0 && !isDrawingMode && currentBrush === "ROAD")) {
             isPanning = true;
             startMouseX = e.clientX;
             startMouseY = e.clientY;
             if (e.button === 1) e.preventDefault();
         } 
-        // Paint Actions
+        // Action Mode Logic
         else if (e.button === 0) {
             if (currentBrush === "ROAD") {
                 if (isDrawingMode) {
                     if (!startGridPos) {
                         startGridPos = gridPos;
                     } else {
+                        // Commit line, then snap next starting point to this ending node
                         commitSnappedLine(startGridPos.x, startGridPos.y, currentGridPos.x, currentGridPos.y);
                         startGridPos = null;
                     }
                 } else {
-                    if (onPaintCallback) onPaintCallback(gridPos.x, gridPos.y);
+                    if (onPaintCallback) onPaintCallback(gridPos.x, gridPos.y, null);
                 }
             } 
-            else if (currentBrush === "POWER_PLANT" || currentBrush.startsWith("ZONE_")) {
-                if (onPaintCallback) onPaintCallback(gridPos.x, gridPos.y);
+            else if (currentBrush === "POWER_PLANT") {
+                if (onPaintCallback) onPaintCallback(gridPos.x, gridPos.y, null);
+            }
+            else if (currentBrush.startsWith("ZONE_")) {
+                if (activePolygonVertices.length >= 3 && checkClosureSnap(gridPos, activePolygonVertices[0])) {
+                    if (onPaintCallback) onPaintCallback(null, null, [...activePolygonVertices]);
+                    activePolygonVertices = []; 
+                } else {
+                    if (activePolygonVertices.length === 0 || 
+                        activePolygonVertices[activePolygonVertices.length - 1].x !== gridPos.x ||
+                        activePolygonVertices[activePolygonVertices.length - 1].y !== gridPos.y) {
+                        activePolygonVertices.push({ x: gridPos.x, y: gridPos.y });
+                    }
+                }
             }
         }
     });
@@ -68,6 +89,7 @@ export function initInputHandlers(canvas, onPaint) {
             startMouseY = e.clientY;
         } 
 
+        // If holding shift and placing roads, calculate the straight line path
         if (currentBrush === "ROAD" && isDrawingMode && startGridPos) {
             currentGridPos = calculateSnapPoint(startGridPos.x, startGridPos.y, rawGridPos.x, rawGridPos.y);
         }
@@ -87,15 +109,22 @@ export function initInputHandlers(canvas, onPaint) {
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 }
 
-// Bridging hook for main.js to update input layer state
 export function setSystemBrush(brushString) {
     currentBrush = brushString;
+    activePolygonVertices = []; 
+    startGridPos = null;
 }
 
 function getTargetGridCell(e, canvas) {
     const rect = canvas.getBoundingClientRect();
     const coords = screenToGrid(e.clientX - rect.left, e.clientY - rect.top, canvas);
     return { x: Math.floor(coords.x / 20), y: Math.floor(coords.y / 20) };
+}
+
+function checkClosureSnap(p1, p2) {
+    const dx = p1.x - p2.x;
+    const dy = p1.y - p2.y;
+    return Math.sqrt(dx * dx + dy * dy) <= SNAP_RADIUS_CELLS;
 }
 
 function calculateSnapPoint(x0, y0, x1, y1) {
@@ -113,12 +142,16 @@ function commitSnappedLine(x0, y0, x1, y1) {
     let sx = (x0 < x1) ? 1 : -1; let sy = (y0 < y1) ? 1 : -1;
     let err = (dx > dy ? dx : -dy) / 2;
     while (true) {
-        if (onPaintCallback) onPaintCallback(x0, y0);
+        if (onPaintCallback) onPaintCallback(x0, y0, null);
         if (x0 === x1 && y0 === y1) break;
         let e2 = err;
         if (e2 > -dx) { err -= dy; x0 += sx; }
         if (e2 <  dy) { err += dx; y0 += sy; }
     }
+}
+
+export function getActivePlotVertices() {
+    return activePolygonVertices;
 }
 
 export function getGhostLine() {
@@ -129,7 +162,7 @@ export function getGhostLine() {
 }
 
 export function getPlacementGhost() {
-    if (currentGridPos && (currentBrush === "POWER_PLANT" || currentBrush.startsWith("ZONE_"))) {
+    if (currentGridPos && (currentBrush === "POWER_PLANT" || (currentBrush === "ROAD" && !isDrawingMode))) {
         return currentGridPos;
     }
     return null;

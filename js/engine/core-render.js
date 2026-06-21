@@ -1,6 +1,7 @@
-// core-render.js - Complete Vector Render Pipeline
+// core-render.js - Geometric Vector Overlay and Raster Renderer
 import { camera } from './camera.js';
-import { getGhostLine, getPlacementGhost } from './input.js';
+import { getActivePlotVertices, getPlacementGhost, getGhostLine } from './input.js';
+import { cityPlots } from '../main.js'; 
 
 const ROAD_TYPE = 50; 
 const POWER_PLANT_TYPE = 99;
@@ -24,6 +25,7 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
         return;
     }
 
+    // 1. RENDER FLAT GRID SIMULATION TILES
     for (let y = 0; y < mapH; y++) {
         for (let x = 0; x < mapW; x++) {
             const idx = y * mapW + x;
@@ -43,75 +45,116 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
                     const voltage = sharedGrids.power[idx];
                     if (voltage > 0) {
                         ctx.fillStyle = `rgba(255, 230, 0, ${0.4 + voltage * 0.6})`;
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, 3.5 / camera.zoom, 0, 2 * Math.PI);
-                        ctx.fill();
+                        ctx.beginPath(); ctx.arc(cx, cy, 3.5 / camera.zoom, 0, 2 * Math.PI); ctx.fill();
                     }
                 }
             } 
             else if (zone === POWER_PLANT_TYPE) {
-                ctx.strokeStyle = '#ffcc00';
-                ctx.lineWidth = 2 / camera.zoom;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 12, cy); ctx.lineTo(cx, cy + 12); ctx.lineTo(cx - 12, cy);
+                ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 2 / camera.zoom;
+                ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 12, cy); ctx.lineTo(cx, cy + 12); ctx.lineTo(cx - 12, cy);
                 ctx.closePath(); ctx.stroke();
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(cx - 3, cy - 3, 6, 6);
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 3, cy - 3, 6, 6);
             } 
             else {
                 const density = sharedGrids.density[idx];
                 if (density <= 0.02) continue;
 
-                let color = '#33ff33'; 
-                let complexDashes = [];
+                let color = '#33ff33';
+                if (zone >= 4 && zone <= 6) color = '#11aa55';
+                else if (zone >= 10 && zone <= 12) color = '#3366ff';
+                else if (zone >= 15 && zone <= 17) color = '#00ffcc';
+                else if (zone >= 20 && zone <= 22) color = '#cc33ff';
+                else if (zone === 30) color = '#e6b800';
+                else if (zone === 31) color = '#ff5500';
+                else if (zone === 35) color = '#888833';
 
-                if (zone >= 4 && zone <= 6) { color = '#11aa55'; complexDashes = [2, 2]; } 
-                else if (zone >= 10 && zone <= 12) { color = '#3366ff'; } 
-                else if (zone >= 15 && zone <= 17) { color = '#00ffcc'; } 
-                else if (zone >= 20 && zone <= 22) { color = '#cc33ff'; } 
-                else if (zone === 30) { color = '#e6b800'; } 
-                else if (zone === 31) { color = '#ff5500'; complexDashes = [6, 2]; } 
-                else if (zone === 35) { color = '#888833'; complexDashes = [1, 4]; }
-
-                const pad = 2;
-                const size = CELL_SIZE - pad * 2;
-                const rx = x * CELL_SIZE + pad;
-                const ry = y * CELL_SIZE + pad;
-
-                ctx.lineWidth = 1 / camera.zoom;
-                if (complexDashes.length > 0) ctx.setLineDash(complexDashes);
-
-                if (density < 0.3) {
-                    ctx.strokeStyle = `rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.35)`;
-                    ctx.strokeRect(rx, ry, size, size);
+                if (density >= 0.7) {
                     ctx.fillStyle = color;
-                    ctx.fillRect(cx - 1, cy - 1, 2, 2);
+                    ctx.fillRect(x * CELL_SIZE + 4, y * CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(cx - 2, cy - 2, 4, 4);
+                } else {
+                    ctx.fillStyle = `rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, ${0.2 + density * 0.6})`;
+                    ctx.fillRect(x * CELL_SIZE + 2, y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                 }
-                else if (density >= 0.3 && density < 0.7) {
-                    ctx.strokeStyle = color;
-                    ctx.strokeRect(rx, ry, size, size);
-                }
-                else if (density >= 0.7) {
-                    ctx.strokeStyle = color;
-                    ctx.strokeRect(rx, ry, size, size);
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.strokeRect(rx + 4, ry + 4, size - 8, size - 8);
-                }
-                ctx.setLineDash([]);
             }
         }
     }
 
-    const ghost = getGhostLine();
-    if (ghost) {
-        ctx.strokeStyle = 'rgba(255, 255, 0, 0.6)';
-        ctx.lineWidth = 2 / camera.zoom; ctx.setLineDash([4, 4]);
+    // 2. RENDER MASTER PLOTTED PERIMETER VECTORS
+    ctx.save();
+    for (const plot of cityPlots) {
+        let color = '#33ff33';
+        if (plot.zoneType >= 4 && plot.zoneType <= 6) color = '#11aa55';
+        else if (plot.zoneType >= 10 && plot.zoneType <= 12) color = '#3366ff';
+        else if (plot.zoneType >= 15 && plot.zoneType <= 17) color = '#00ffcc';
+        else if (plot.zoneType >= 20 && plot.zoneType <= 22) color = '#cc33ff';
+        else if (plot.zoneType === 30) color = '#e6b800';
+        else if (plot.zoneType === 31) color = '#ff5500';
+        else if (plot.zoneType === 35) color = '#888833';
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5 / camera.zoom;
         ctx.beginPath();
-        ctx.moveTo(ghost.x0 * 20 + 10, ghost.y0 * 20 + 10);
-        ctx.lineTo(ghost.x1 * 20 + 10, ghost.y1 * 20 + 10);
-        ctx.stroke(); ctx.setLineDash([]);
+        ctx.moveTo(plot.vertices[0].x * CELL_SIZE, plot.vertices[0].y * CELL_SIZE);
+        for (let i = 1; i < plot.vertices.length; i++) {
+            ctx.lineTo(plot.vertices[i].x * CELL_SIZE, plot.vertices[i].y * CELL_SIZE);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        
+        ctx.fillStyle = `rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.06)`;
+        ctx.fill();
+    }
+    ctx.restore();
+
+    // 3. RENDER ACTIVE BLUEPRINT PLOTTING FEEDBACK
+    const activeVertices = getActivePlotVertices();
+    if (activeVertices && activeVertices.length > 0) {
+        ctx.save();
+        ctx.strokeStyle = '#ffff00'; 
+        ctx.lineWidth = 2 / camera.zoom;
+        
+        ctx.beginPath();
+        ctx.moveTo(activeVertices[0].x * CELL_SIZE, activeVertices[0].y * CELL_SIZE);
+        for (let i = 1; i < activeVertices.length; i++) {
+            ctx.lineTo(activeVertices[i].x * CELL_SIZE, activeVertices[i].y * CELL_SIZE);
+        }
+        
+        const canvasEl = ctx.canvas;
+        const rect = canvasEl.getBoundingClientRect();
+        const mouseGrid = screenToTargetGridLocal(window.lastMouseX - rect.left, window.lastMouseY - rect.top, canvasEl);
+        ctx.lineTo(mouseGrid.x * CELL_SIZE, mouseGrid.y * CELL_SIZE);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        for (const v of activeVertices) {
+            ctx.fillRect(v.x * CELL_SIZE - 3, v.y * CELL_SIZE - 3, 6, 6);
+        }
+        
+        if (activeVertices.length >= 3) {
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(activeVertices[0].x * CELL_SIZE, activeVertices[0].y * CELL_SIZE, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        ctx.restore();
     }
 
+    // 🌟 RESTORED: ROAD LINE VECTOR PREVIEW TRACKING
+    const roadGhost = getGhostLine();
+    if (roadGhost) {
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+        ctx.lineWidth = 2.5 / camera.zoom;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(roadGhost.x0 * CELL_SIZE + CELL_SIZE / 2, roadGhost.y0 * CELL_SIZE + CELL_SIZE / 2);
+        ctx.lineTo(roadGhost.x1 * CELL_SIZE + CELL_SIZE / 2, roadGhost.y1 * CELL_SIZE + CELL_SIZE / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // 4. RENDER INFRASTRUCTURE GHOST BOXES
     const itemGhost = getPlacementGhost();
     if (itemGhost) {
         ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
@@ -120,6 +163,17 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
     }
 
     ctx.restore();
+}
+
+window.addEventListener('mousemove', (e) => {
+    window.lastMouseX = e.clientX;
+    window.lastMouseY = e.clientY;
+});
+
+function screenToTargetGridLocal(screenX, screenY, canvas) {
+    const gridX = (screenX - canvas.width / 2) / camera.zoom + camera.x;
+    const gridY = (screenY - canvas.height / 2) / camera.zoom + camera.y;
+    return { x: Math.floor(gridX / 20), y: Math.floor(gridY / 20) };
 }
 
 function renderConnectedRoadVector(ctx, zones, x, y, mapW, mapH, cx, cy) {
