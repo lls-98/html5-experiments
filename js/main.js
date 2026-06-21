@@ -11,26 +11,27 @@ const mapHeight = 250;
 
 export let activeBrush = "ROAD";
 export let cityPlots = []; 
+export let showPollutionOverlay = true;
 
 // 🔄 TRANSACTION UNDO STACKS
 let actionHistoryStack = [];
 
 window.addEventListener('DOMContentLoaded', () => {
-    canvas = document.getElementById('city-canvas');
-    ctx = canvas.getContext('2d');
+    canvas = document.getElementById('city-canvas'); //
+    ctx = canvas.getContext('2d'); //
     
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); //
+    window.addEventListener('resize', resizeCanvas); //
 
-    initInputHandlers(canvas, handleUserPaintAction);
+    initInputHandlers(canvas, handleUserPaintAction); //
 
-    camera.x = (mapWidth * 20) / 2;
-    camera.y = (mapHeight * 20) / 2;
-    camera.zoom = 0.4; 
+    camera.x = (mapWidth * 20) / 2; //
+    camera.y = (mapHeight * 20) / 2; //
+    camera.zoom = 0.4; //
 
-    worker = new Worker('js/worker/sim-worker.js');
-    worker.postMessage({ cmd: 'init', width: mapWidth, height: mapHeight });
-    worker.onmessage = handleWorkerMessage;
+    worker = new Worker('js/worker/sim-worker.js'); //
+    worker.postMessage({ cmd: 'init', width: mapWidth, height: mapHeight }); //
+    worker.onmessage = handleWorkerMessage; // ✅ This safely redirects all worker events down to the handler function!
 });
 
 function resizeCanvas() {
@@ -108,6 +109,20 @@ window.addEventListener('keydown', (e) => {
         ];
         indCycle = (indCycle + 1) % types.length; activeBrush = "ZONE_" + types[indCycle].id; setSystemBrush(activeBrush);
         if (statusEl) { statusEl.innerText = `PLOT: ${types[indCycle].label}`; statusEl.style.color = types[indCycle].col; }
+    }
+    if (key === 'v') {
+        showPollutionOverlay = !showPollutionOverlay;
+        const statusEl = document.getElementById('stat-engine');
+        if (statusEl) {
+            statusEl.innerText = showPollutionOverlay ? "SMOG OVERLAY: ON" : "SMOG OVERLAY: OFF";
+            statusEl.style.color = showPollutionOverlay ? "#33ff33" : "#ffcc00";
+            
+            // Revert status message back after 1.5 seconds
+            setTimeout(() => {
+                statusEl.innerText = "ONLINE";
+                statusEl.style.color = "#33ff33";
+            }, 1500);
+        }
     }
 });
 
@@ -297,63 +312,77 @@ function isPointInPolygon(point, vs) {
 }
 
 function handleWorkerMessage(e) {
+    // 🌪️ FIXED HANDSHAKE: Catch the initialization signal inside the actual worker event frame!
     if (e.data.cmd === 'initialized') {
         sharedGrids.zones = new Uint8Array(e.data.zoneBuffer);
         sharedGrids.density = new Float32Array(e.data.densityBuffer);
         sharedGrids.wealth = new Float32Array(e.data.wealthBuffer);
         sharedGrids.power = new Float32Array(e.data.powerGridBuffer); 
         sharedGrids.traffic = new Float32Array(e.data.trafficGridBuffer);
+        sharedGrids.pollution = new Float32Array(e.data.pollutionGridBuffer); // 🌫️ Safely links shared memory!
+        sharedGrids.health = new Float32Array(e.data.healthGridBuffer);       // 🏥 Safely links shared memory!
 
         document.getElementById('stat-engine').innerText = "ONLINE";
         document.getElementById('stat-engine').style.color = "#33ff33";
         requestAnimationFrame(renderLoop);
+        return; // Exit early since this is a setup packet
     }
 
     if (e.data.cmd === 'updateStats') {
-        document.getElementById('gwi-value').innerText = e.data.gwi.toFixed(1) + '%';
-        document.getElementById('stat-pop').innerText = e.data.population.toLocaleString();
+        document.getElementById('gwi-value').innerText = e.data.gwi.toFixed(1) + '%'; //
+        document.getElementById('stat-pop').innerText = e.data.population.toLocaleString(); //
+        
+        // 🏥 UPDATE SIDEBAR HEALTH HUD MATRIX INDICATOR
+        const healthEl = document.getElementById('stat-health'); //
+        if (healthEl && typeof e.data.healthSecurity !== 'undefined') { //
+            const healthPercentage = e.data.healthSecurity * 100; //
+            healthEl.innerText = `${healthPercentage.toFixed(1)}%`; //
+
+            if (healthPercentage > 80.0)      healthEl.style.color = "#33ff33"; //
+            else if (healthPercentage > 50.0) healthEl.style.color = "#ffcc00"; //
+            else                              healthEl.style.color = "#ff3333"; //
+        }
         
         // 1. Refresh global macro bar arrays
-        if (e.data.demand) {
-            const rPct = Math.max(0, Math.min(100, ((e.data.demand.R - 0.01) / 0.04) * 100));
-            const cPct = Math.max(0, Math.min(100, ((e.data.demand.C - 0.01) / 0.03) * 100));
-            const iPct = Math.max(0, Math.min(100, ((e.data.demand.I - 0.01) / 0.03) * 100));
+        if (e.data.demand) { //
+            const rPct = Math.max(0, Math.min(100, ((e.data.demand.R - 0.01) / 0.04) * 100)); //
+            const cPct = Math.max(0, Math.min(100, ((e.data.demand.C - 0.01) / 0.03) * 100)); //
+            const iPct = Math.max(0, Math.min(100, ((e.data.demand.I - 0.01) / 0.03) * 100)); //
 
-            document.getElementById('bar-r').style.width = `${rPct}%`;
-            document.getElementById('bar-c').style.width = `${cPct}%`;
-            document.getElementById('bar-i').style.width = `${iPct}%`;
+            document.getElementById('bar-r').style.width = `${rPct}%`; //
+            document.getElementById('bar-c').style.width = `${cPct}%`; //
+            document.getElementById('bar-i').style.width = `${iPct}%`; //
         }
 
         // 💰 2. CONTEXTUAL METRIC RENDERING: REVENUE CHANNELS
-        const revEl = document.getElementById('stat-revenue');
-        if (revEl && typeof e.data.revenue !== 'undefined') {
-            const roundedRevenue = Math.round(e.data.revenue);
+        const revEl = document.getElementById('stat-revenue'); //
+        if (revEl && typeof e.data.revenue !== 'undefined') { //
+            const roundedRevenue = Math.round(e.data.revenue); //
             
-            if (roundedRevenue > 0) {
-                revEl.className = "hud-value positive";
-                revEl.innerText = `+$${roundedRevenue.toLocaleString()}/s`;
-            } else if (roundedRevenue === 0) {
-                revEl.className = "hud-value warning";
-                revEl.innerText = "$0/s";
-            } else {
-                revEl.className = "hud-value negative";
-                revEl.innerText = `-$${Math.abs(roundedRevenue).toLocaleString()}/s`;
+            if (roundedRevenue > 0) { //
+                revEl.className = "hud-value positive"; //
+                revEl.innerText = `+$${roundedRevenue.toLocaleString()}/s`; //
+            } else if (roundedRevenue === 0) { //
+                revEl.className = "hud-value warning"; //
+                revEl.innerText = "$0/s"; //
+            } else { //
+                revEl.className = "hud-value negative"; //
+                revEl.innerText = `-$${Math.abs(roundedRevenue).toLocaleString()}/s`; //
             }
         }
 
         // 📊 3. CONTEXTUAL METRIC RENDERING: INEQ GINI INDEX
-        const ineqEl = document.getElementById('stat-inequality');
-        if (ineqEl && typeof e.data.gwi !== 'undefined') {
-            // Unpack current inequality bounds inversely out of your global structural welfare indexes
-            const computedIneqPct = 100 - e.data.gwi;
-            ineqEl.innerText = `${computedIneqPct.toFixed(1)}%`;
+        const ineqEl = document.getElementById('stat-inequality'); //
+        if (ineqEl && typeof e.data.gwi !== 'undefined') { //
+            const computedIneqPct = 100 - e.data.gwi; //
+            ineqEl.innerText = `${computedIneqPct.toFixed(1)}%`; //
 
-            if (computedIneqPct > 45.0) {
-                ineqEl.className = "hud-value negative"; // Unbalanced stratification warning
-            } else if (computedIneqPct > 25.0) {
-                ineqEl.className = "hud-value warning";  // Mid-tier delta
-            } else {
-                ineqEl.className = "hud-value positive"; // Healthy fiscal stability parity
+            if (computedIneqPct > 45.0) { //
+                ineqEl.className = "hud-value negative"; //
+            } else if (computedIneqPct > 25.0) { //
+                ineqEl.className = "hud-value warning"; //
+            } else { //
+                ineqEl.className = "hud-value positive"; //
             }
         }
     }

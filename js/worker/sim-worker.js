@@ -1,14 +1,15 @@
-// js/worker/sim-worker.js - Integrated Macro Engine with Advanced Zoning & Taxation
+// js/worker/sim-worker.js - Integrated Architectural Master Core with Eco-Diffusion Systems
 self.importScripts('./core/matrix.js');
 self.importScripts('./systems/infrastructure.js');
 self.importScripts('./systems/zoning.js'); 
+self.importScripts('./systems/environment.js'); // 🌪️ IMPORT NEW ECO-SOLVER UTILITIES
 
 let MAP_W = 250; 
 let MAP_H = 250;
 let totalCells = MAP_W * MAP_H;
 
-let zoneBuffer, densityBuffer, wealthBuffer, powerGridBuffer, trafficBuffer;
-let zoneGrid, densityGrid, wealthGrid, powerGrid, trafficGrid;
+let zoneBuffer, densityBuffer, wealthBuffer, powerGridBuffer, trafficBuffer, pollutionBuffer, healthBuffer;
+let zoneGrid, densityGrid, wealthGrid, powerGrid, trafficGrid, pollutionGrid, healthGrid;
 
 let structuralPowerSources = [];
 let globalDemand = { R: 0.03, C: 0.02, I: 0.02 }; 
@@ -21,21 +22,31 @@ self.onmessage = function(e) {
         MAP_H = e.data.height;
         totalCells = MAP_W * MAP_H;
 
-        zoneBuffer      = new SharedArrayBuffer(totalCells * 1); 
-        densityBuffer   = new SharedArrayBuffer(totalCells * 4); 
-        wealthBuffer    = new SharedArrayBuffer(totalCells * 4); 
-        powerGridBuffer = new SharedArrayBuffer(totalCells * 4); 
-        trafficBuffer   = new SharedArrayBuffer(totalCells * 4); 
+        // Allocate Shared Memory Arrays cleanly
+        zoneBuffer       = new SharedArrayBuffer(totalCells * 1); 
+        densityBuffer    = new SharedArrayBuffer(totalCells * 4); 
+        wealthBuffer     = new SharedArrayBuffer(totalCells * 4); 
+        powerGridBuffer  = new SharedArrayBuffer(totalCells * 4); 
+        trafficBuffer    = new SharedArrayBuffer(totalCells * 4); 
+        pollutionBuffer  = new SharedArrayBuffer(totalCells * 4); // 🌫️ POLLUTION GRID INTERFACE BUFFER (Float32)
+        healthBuffer     = new SharedArrayBuffer(totalCells * 4); // 🏥 POPULATION LAGGING HEALTH BUFFER (Float32)
 
-        zoneGrid    = new Uint8Array(zoneBuffer);
-        densityGrid = new Float32Array(densityBuffer);
-        wealthGrid  = new Float32Array(wealthBuffer);
-        powerGrid   = new Float32Array(powerGridBuffer);
-        trafficGrid = new Float32Array(trafficBuffer);
+        zoneGrid      = new Uint8Array(zoneBuffer);
+        densityGrid   = new Float32Array(densityBuffer);
+        wealthGrid    = new Float32Array(wealthBuffer);
+        powerGrid     = new Float32Array(powerGridBuffer);
+        trafficGrid   = new Float32Array(trafficBuffer);
+        pollutionGrid = new Float32Array(pollutionBuffer);
+        healthGrid    = new Float32Array(healthBuffer);
 
-        // Bind references globally onto self context so systems files fetch them seamlessly
+        // Bind references globally to worker thread context
         self.trafficGrid = trafficGrid;
         self.wealthGrid = wealthGrid;
+        self.pollutionGrid = pollutionGrid;
+        self.healthGrid = healthGrid;
+
+        // Seed initial health parameters to perfect baseline health (1.0)
+        healthGrid.fill(1.0);
 
         self.postMessage({
             cmd: 'initialized',
@@ -43,7 +54,9 @@ self.onmessage = function(e) {
             densityBuffer: densityBuffer,
             wealthBuffer: wealthBuffer,
             powerGridBuffer: powerGridBuffer,
-            trafficGridBuffer: trafficBuffer
+            trafficGridBuffer: trafficBuffer,
+            pollutionGridBuffer: pollutionBuffer, // Export array node securely to main thread
+            healthGridBuffer: healthBuffer
         });
 
         setInterval(tickSimulation, 1000);
@@ -62,19 +75,21 @@ self.onmessage = function(e) {
 };
 
 function tickSimulation() {
-    if (!zoneGrid || !powerGrid || !trafficGrid || !wealthGrid) return;
+    if (!zoneGrid || !powerGrid || !trafficGrid || !pollutionGrid || !healthGrid) return;
 
-    // 1. Solve utility infrastructures
+    // 1. Solve physical utility networks
     solveElectricityGrid(zoneGrid, powerGrid, structuralPowerSources, MAP_W, MAP_H);
     solveTrafficFlow(zoneGrid, densityGrid, trafficGrid, MAP_W, MAP_H);
     
-    // 2. Simulate multi-zoning extensions and local mixed-use compromises
-    simulateZoningGrowth(zoneGrid, densityGrid, powerGrid, globalDemand, MAP_W, MAP_H);
+    // 2. Run Environmental Vector Diffusion with diagonal Wind Advection (Task 3.3)
+    solvePollutionDiffusion(zoneGrid, densityGrid, trafficGrid, pollutionGrid, MAP_W, MAP_H);
+    const systemHealthIndex = updateCellularHealthMatrix(zoneGrid, pollutionGrid, healthGrid, MAP_W, MAP_H);
 
-    // 3. Process progressive tax brackets, wealth optimization loops, and capital flight
+    // 3. Simulate economic multi-zoning extensions
+    simulateZoningGrowth(zoneGrid, densityGrid, powerGrid, globalDemand, MAP_W, MAP_H);
     const fiscalMetrics = evaluateTaxationAndSocialSafety(zoneGrid, densityGrid, wealthGrid, MAP_W, MAP_H);
 
-    // 4. Update macro economic demand variables
+    // 4. Update economic global demand matrix variables
     globalDemand.R += (Math.random() * 0.004) - 0.002;
     globalDemand.C += (Math.random() * 0.004) - 0.002;
     globalDemand.I += (Math.random() * 0.004) - 0.002;
@@ -89,12 +104,12 @@ function tickSimulation() {
         }
     }
 
-    // Ship data packets containing new taxation variables out to frontend UI elements
     self.postMessage({
         cmd: 'updateStats',
-        gwi: 100 - (fiscalMetrics.inequality * 100), // Map inequality inversely onto GWI (Growth/Welfare Index)
+        gwi: 100 - (fiscalMetrics.inequality * 100),
         population: popSum,
         demand: globalDemand,
-        revenue: fiscalMetrics.revenue // Append cash revenue field
+        revenue: fiscalMetrics.revenue,
+        healthSecurity: systemHealthIndex // 🏥 Pass live lagging health metric back up to UI
     });
 }

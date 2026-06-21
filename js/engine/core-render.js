@@ -1,7 +1,7 @@
 // core-render.js - Geometric Vector Overlay, Scale Bar, and Measurement Tooltips
 import { camera } from './camera.js';
 import { getActivePlotVertices, getPlacementGhost, getGhostLine, getCurrentBrush } from './input.js';
-import { cityPlots } from '../main.js'; 
+import { cityPlots, showPollutionOverlay } from '../main.js';
 
 const ROAD_TYPE = 50; 
 const POWER_PLANT_TYPE = 99;
@@ -32,19 +32,49 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
         for (let x = 0; x < mapW; x++) {
             const idx = y * mapW + x;
             const zone = sharedGrids.zones[idx];
-
-            if (zone === 0) continue;
-
             const cx = x * CELL_SIZE + CELL_SIZE / 2;
             const cy = y * CELL_SIZE + CELL_SIZE / 2;
 
+            // 🌫️ ENVIRONMENTAL TOXIN VECTOR OVERLAY (With Viewport Layer Toggle)
+            if (showPollutionOverlay && sharedGrids.pollution) {
+                const toxicDensity = sharedGrids.pollution[idx];
+                if (toxicDensity > 0.05) {
+                    ctx.save();
+                    const alphaMultiplier = Math.min(0.85, toxicDensity * 0.65);
+                    ctx.fillStyle = `rgba(135, 165, 40, ${alphaMultiplier})`;
+                    ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    ctx.restore();
+                }
+            }
+
+            // 1B. VACANT CELL SKIP CLAUSE
+            // Now we can safely skip the architectural rendering if there is no building here
+            if (zone === 0) continue;
+
+            // 🏠 1C. ARCHITECTURAL ZONE RENDERING
+            let color = '#33ff33'; // Default Residential light green
+            if (zone >= 4 && zone <= 6) color = '#11aa55';       // Public Housing (Forest Green)
+            else if (zone >= 10 && zone <= 12) color = '#3366ff'; // Commercial (Blue)
+            else if (zone >= 15 && zone <= 17) color = '#00ffcc'; // Corporate Office (Teal)
+            else if (zone >= 20 && zone <= 22) color = '#cc33ff'; // Mixed-Use Blocks (Bright Purple)
+            else if (zone === 30) color = '#e6b800';              // Light Industry (Yellow)
+            else if (zone === 31) color = '#ff5500';              // Heavy Industry (Orange)
+            else if (zone === 35) color = '#888833';              // Agriculture (Khaki)
+
+            if (zone !== ROAD_TYPE && zone !== POWER_PLANT_TYPE) {
+                const density = sharedGrids.density ? sharedGrids.density[idx] : 0.1;
+                if (density > 0) {
+                    ctx.fillStyle = color;
+                    const bSize = CELL_SIZE * 0.3 + (CELL_SIZE * 0.5 * density);
+                    ctx.fillRect(cx - bSize / 2, cy - bSize / 2, bSize, bSize);
+                }
+            }
+
             if (zone === ROAD_TYPE) {
-                // 🚗 TRAFFIC CONGESTION GLOW VECTOR (Task 3.1)
-                let strokeColor = '#00ffff'; // Default empty avenue Cyan
+                let strokeColor = '#00ffff'; 
                 if (sharedGrids.traffic) {
                     const stress = sharedGrids.traffic[idx];
                     if (stress > 0.05) {
-                        // Dynamically morph color from sleek Cyan directly to warning Crimson Red
                         const r = Math.floor(stress * 255);
                         const g = Math.floor((1.0 - stress) * 255);
                         const b = Math.floor((1.0 - stress) * 255);
@@ -55,10 +85,7 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
                 ctx.strokeStyle = strokeColor;
                 ctx.lineWidth = 1.5 / camera.zoom;
                 
-                // Fetch local stress value to pass to the updated vector animator function
                 const currentCellStress = sharedGrids.traffic ? sharedGrids.traffic[idx] : 0;
-                
-                // 🌟 UPDATED: Appended currentCellStress parameter to the function frame
                 renderConnectedRoadVector(ctx, sharedGrids.zones, x, y, mapW, mapH, cx, cy, currentCellStress);
                 
                 if (sharedGrids.power) {
@@ -69,36 +96,13 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
                     }
                 }
             } 
-            else if (zone === POWER_PLANT_TYPE) {
-                ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 2 / camera.zoom;
-                ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 12, cy); ctx.lineTo(cx, cy + 12); ctx.lineTo(cx - 12, cy);
-                ctx.closePath(); ctx.stroke();
-                ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 3, cy - 3, 6, 6);
-            } 
-            else {
-                const density = sharedGrids.density[idx];
-                if (density <= 0.02) continue;
 
-                // ... Inside Section 1 zoning block loop in core-render.js
-                let color = '#33ff33'; // Default Residential light green
-                
-                if (zone >= 4 && zone <= 6) color = '#11aa55';       // 🏢 Public/Social Housing (Forest Green)
-                else if (zone >= 10 && zone <= 12) color = '#3366ff'; // Commercial (Blue)
-                else if (zone >= 15 && zone <= 17) color = '#00ffcc'; // Corporate Office (Teal)
-                else if (zone >= 20 && zone <= 22) color = '#cc33ff'; // 🏢 Mixed-Use Blocks (Bright Purple)
-                else if (zone === 30) color = '#e6b800';              // Light Industry (Yellow)
-                else if (zone === 31) color = '#ff5500';              // Heavy Industry (Orange)
-                else if (zone === 35) color = '#888833';              // Agriculture (Khaki)
-
-                if (density >= 0.7) {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x * CELL_SIZE + 4, y * CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(cx - 2, cy - 2, 4, 4);
-                } else {
-                    ctx.fillStyle = `rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, ${0.2 + density * 0.6})`;
-                    ctx.fillRect(x * CELL_SIZE + 2, y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                }
+            if (zone === POWER_PLANT_TYPE) {
+                ctx.fillStyle = '#ff3333';
+                ctx.fillRect(cx - 8, cy - 8, 16, 16);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1 / camera.zoom;
+                ctx.strokeRect(cx - 8, cy - 8, 16, 16);
             }
         }
     }
