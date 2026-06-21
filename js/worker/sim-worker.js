@@ -49,6 +49,10 @@ self.onmessage = function(e) {
             densityGrid[e.data.index] = 1.0;
         }
     }
+    // 🚜 LIVE DESTRUCTION PACKET ROUTER
+    if (e.data.cmd === 'removePowerPlant') {
+        structuralPowerSources = structuralPowerSources.filter(idx => idx !== e.data.index);
+    }
 };
 
 function tickSimulation() {
@@ -57,7 +61,6 @@ function tickSimulation() {
     solveElectricityGrid(zoneGrid, powerGrid, structuralPowerSources, MAP_W, MAP_H);
     simulateZoningGrowth(zoneGrid, densityGrid, powerGrid, globalDemand, MAP_W, MAP_H);
 
-    // Keep demand fields dynamically fluctuating over ticks
     globalDemand.R += (Math.random() * 0.004) - 0.002;
     globalDemand.C += (Math.random() * 0.004) - 0.002;
     globalDemand.I += (Math.random() * 0.004) - 0.002;
@@ -65,18 +68,18 @@ function tickSimulation() {
     globalDemand.C = Math.max(0.01, Math.min(0.04, globalDemand.C));
     globalDemand.I = Math.max(0.01, Math.min(0.04, globalDemand.I));
 
-    let popSum = 0, comSum = 0, indSum = 0;
+    let popSum = 0;
     for (let i = 0; i < totalCells; i++) {
-        const z = zoneGrid[i];
-        const d = densityGrid[i];
-        if (z >= 1 && z <= 6) popSum += d;
-        if (z >= 10 && z <= 22) comSum += d;
-        if (z >= 30 && z <= 35) indSum += d;
+        if (zoneGrid[i] >= 1 && zoneGrid[i] <= 6) {
+            popSum += Math.floor(densityGrid[i] * 120);
+        }
     }
 
+    // 📈 SHIP OUT LIVE MACRO-DEMAND LEVELS TO FRONTEND DASHBOARD
     self.postMessage({
         cmd: 'updateStats',
-        population: Math.floor(popSum * 750), 
-        gwi: 50 + (comSum * 2) + (indSum * 1)
+        gwi: 78.4,
+        population: popSum,
+        demand: globalDemand // Append object to message frame
     });
 }

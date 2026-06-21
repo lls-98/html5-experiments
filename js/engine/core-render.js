@@ -1,6 +1,6 @@
 // core-render.js - Geometric Vector Overlay, Scale Bar, and Measurement Tooltips
 import { camera } from './camera.js';
-import { getActivePlotVertices, getPlacementGhost, getGhostLine } from './input.js';
+import { getActivePlotVertices, getPlacementGhost, getGhostLine, getCurrentBrush } from './input.js';
 import { cityPlots } from '../main.js'; 
 
 const ROAD_TYPE = 50; 
@@ -197,9 +197,16 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
     // 5. RENDER INFRASTRUCTURE GHOST BOXES
     const itemGhost = getPlacementGhost();
     if (itemGhost) {
-        ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+        // Shift ghost frame outline color based on the selected tool
+        ctx.strokeStyle = (getCurrentBrush === "BULLDOZER") ? 'rgba(255, 51, 51, 0.8)' : 'rgba(255, 255, 0, 0.5)';
         ctx.lineWidth = 1.5 / camera.zoom;
         ctx.strokeRect(itemGhost.x * CELL_SIZE + 2, itemGhost.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+        
+        // Give the bulldozer a threatening transparent interior fill structure
+        if (getCurrentBrush === "BULLDOZER") {
+            ctx.fillStyle = 'rgba(255, 51, 51, 0.15)';
+            ctx.fillRect(itemGhost.x * CELL_SIZE + 2, itemGhost.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+        }
     }
 
     // =========================================================================
