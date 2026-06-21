@@ -1,4 +1,4 @@
-// core-render.js - Geometric Vector Overlay and Raster Renderer
+// core-render.js - Geometric Vector Overlay, Scale Bar, and Measurement Tooltips
 import { camera } from './camera.js';
 import { getActivePlotVertices, getPlacementGhost, getGhostLine } from './input.js';
 import { cityPlots } from '../main.js'; 
@@ -12,10 +12,12 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
+    // Center-point matrix transformations
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.scale(camera.zoom, camera.zoom);
     ctx.translate(-camera.x, -camera.y);
 
+    // Subtle Outer Frame Bounds
     ctx.strokeStyle = '#004400';
     ctx.lineWidth = 2 / camera.zoom;
     ctx.strokeRect(0, 0, mapW * CELL_SIZE, mapH * CELL_SIZE);
@@ -141,26 +143,94 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
         ctx.restore();
     }
 
-    // 🌟 RESTORED: ROAD LINE VECTOR PREVIEW TRACKING
+    // 4. ROAD LINE VECTOR PREVIEW & MEASUREMENT TOOLTIP
     const roadGhost = getGhostLine();
     if (roadGhost) {
+        ctx.save();
         ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
         ctx.lineWidth = 2.5 / camera.zoom;
         ctx.setLineDash([6, 4]);
         ctx.beginPath();
-        ctx.moveTo(roadGhost.x0 * CELL_SIZE + CELL_SIZE / 2, roadGhost.y0 * CELL_SIZE + CELL_SIZE / 2);
-        ctx.lineTo(roadGhost.x1 * CELL_SIZE + CELL_SIZE / 2, roadGhost.y1 * CELL_SIZE + CELL_SIZE / 2);
+        
+        const startX = roadGhost.x0 * CELL_SIZE + CELL_SIZE / 2;
+        const startY = roadGhost.y0 * CELL_SIZE + CELL_SIZE / 2;
+        const endX = roadGhost.x1 * CELL_SIZE + CELL_SIZE / 2;
+        const endY = roadGhost.y1 * CELL_SIZE + CELL_SIZE / 2;
+        
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        // 📏 METRIC MEASUREMENT CALCULATION (1 Cell = 10 Meters)
+        const deltaX = roadGhost.x1 - roadGhost.x0;
+        const deltaY = roadGhost.y1 - roadGhost.y0;
+        // Compute discrete tile step distance along the grid vectors
+        const cellDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const distanceMeters = Math.round(cellDistance * 10);
+
+        // Render floating CAD-style dimension label box near cursor
+        const textLabel = `${distanceMeters} m`;
+        ctx.font = `bold ${Math.max(12, 14 / camera.zoom)}px monospace`;
+        
+        const padding = 6;
+        const textWidth = ctx.measureText(textLabel).width;
+        const textHeight = Math.max(12, 14 / camera.zoom);
+        
+        // Offset tooltip slightly above and to the right of the crosshair target
+        const tipX = endX + 15;
+        const tipY = endY - 15;
+
+        // Tooltip Background Frame
+        ctx.fillStyle = 'rgba(0, 20, 30, 0.85)';
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 1 / camera.zoom;
+        ctx.fillRect(tipX - padding, tipY - textHeight, textWidth + (padding * 2), textHeight + padding);
+        ctx.strokeRect(tipX - padding, tipY - textHeight, textWidth + (padding * 2), textHeight + padding);
+
+        // Tooltip Text Value
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(textLabel, tipX, tipY);
+        ctx.restore();
     }
 
-    // 4. RENDER INFRASTRUCTURE GHOST BOXES
+    // 5. RENDER INFRASTRUCTURE GHOST BOXES
     const itemGhost = getPlacementGhost();
     if (itemGhost) {
         ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
         ctx.lineWidth = 1.5 / camera.zoom;
         ctx.strokeRect(itemGhost.x * CELL_SIZE + 2, itemGhost.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
     }
+
+    // =========================================================================
+    // 🌍 DYNAMIC GEOGRAPHIC MAP SCALE (1 Cell = 10 Meters)
+    // =========================================================================
+    ctx.restore(); // Drop camera matrix scaling transformations completely
+
+    ctx.save();
+    const uiX = canvas.width - 140;
+    const uiY = canvas.height - 30;
+
+    // Determine scale threshold breaks dynamically based on viewport altitude
+    const targetMeters = (camera.zoom < 0.3) ? 500 : (camera.zoom < 0.8) ? 100 : 50;
+    const targetCells = targetMeters / 10; 
+    const barPixelWidth = targetCells * CELL_SIZE * camera.zoom;
+
+    // Structural scale lines
+    ctx.strokeStyle = '#ffffff';
+    ctx.fillStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.font = '11px monospace';
+
+    ctx.beginPath();
+    ctx.moveTo(uiX, uiY - 5); ctx.lineTo(uiX, uiY);
+    ctx.lineTo(uiX + barPixelWidth, uiY);
+    ctx.lineTo(uiX + barPixelWidth, uiY - 5);
+    ctx.stroke();
+
+    const scaleLabel = `${targetMeters} m`;
+    const scaleTextWidth = ctx.measureText(scaleLabel).width;
+    ctx.fillText(scaleLabel, uiX + (barPixelWidth / 2) - (scaleTextWidth / 2), uiY - 8);
 
     ctx.restore();
 }
