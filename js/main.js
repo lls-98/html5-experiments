@@ -281,6 +281,7 @@ function handleWorkerMessage(e) {
         sharedGrids.density = new Float32Array(e.data.densityBuffer);
         sharedGrids.wealth = new Float32Array(e.data.wealthBuffer);
         sharedGrids.power = new Float32Array(e.data.powerGridBuffer); 
+        sharedGrids.traffic = new Float32Array(e.data.trafficGridBuffer);
 
         document.getElementById('stat-engine').innerText = "ONLINE";
         document.getElementById('stat-engine').style.color = "#33ff33";

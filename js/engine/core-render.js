@@ -39,9 +39,27 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
             const cy = y * CELL_SIZE + CELL_SIZE / 2;
 
             if (zone === ROAD_TYPE) {
-                ctx.strokeStyle = '#00ffff';
+                // 🚗 TRAFFIC CONGESTION GLOW VECTOR (Task 3.1)
+                let strokeColor = '#00ffff'; // Default empty avenue Cyan
+                if (sharedGrids.traffic) {
+                    const stress = sharedGrids.traffic[idx];
+                    if (stress > 0.05) {
+                        // Dynamically morph color from sleek Cyan directly to warning Crimson Red
+                        const r = Math.floor(stress * 255);
+                        const g = Math.floor((1.0 - stress) * 255);
+                        const b = Math.floor((1.0 - stress) * 255);
+                        strokeColor = `rgb(${r}, ${g}, ${b})`;
+                    }
+                }
+
+                ctx.strokeStyle = strokeColor;
                 ctx.lineWidth = 1.5 / camera.zoom;
-                renderConnectedRoadVector(ctx, sharedGrids.zones, x, y, mapW, mapH, cx, cy);
+                
+                // Fetch local stress value to pass to the updated vector animator function
+                const currentCellStress = sharedGrids.traffic ? sharedGrids.traffic[idx] : 0;
+                
+                // 🌟 UPDATED: Appended currentCellStress parameter to the function frame
+                renderConnectedRoadVector(ctx, sharedGrids.zones, x, y, mapW, mapH, cx, cy, currentCellStress);
                 
                 if (sharedGrids.power) {
                     const voltage = sharedGrids.power[idx];
@@ -253,8 +271,12 @@ function screenToTargetGridLocal(screenX, screenY, canvas) {
     return { x: Math.floor(gridX / 20), y: Math.floor(gridY / 20) };
 }
 
-function renderConnectedRoadVector(ctx, zones, x, y, mapW, mapH, cx, cy) {
-    const idx = y * mapW + x; const hSize = CELL_SIZE / 2;
+function renderConnectedRoadVector(ctx, zones, x, y, mapW, mapH, cx, cy, trafficStress = 0) {
+    const idx = y * mapW + x; 
+    const hSize = CELL_SIZE / 2;
+    const ROAD_TYPE = 50;
+
+    // 1. Establish structural connectivity flags
     const N  = y > 0 ? zones[idx - mapW] === ROAD_TYPE : false;
     const S  = y < mapH - 1 ? zones[idx + mapW] === ROAD_TYPE : false;
     const E  = x < mapW - 1 ? zones[idx + 1] === ROAD_TYPE : false;
@@ -264,11 +286,55 @@ function renderConnectedRoadVector(ctx, zones, x, y, mapW, mapH, cx, cy) {
     const SE = (y < mapH - 1 && x < mapW - 1) ? zones[idx + mapW + 1] === ROAD_TYPE : false;
     const SW = (y < mapH - 1 && x > 0) ? zones[idx + mapW - 1] === ROAD_TYPE : false;
 
-    ctx.beginPath(); ctx.arc(cx, cy, 2 / camera.zoom, 0, 2 * Math.PI); ctx.fillStyle = '#00ffff'; ctx.fill();
+    // 2. PASS ONE: Draw the static background structural pipe core
     ctx.beginPath();
-    if (N) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - hSize); } if (S) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + hSize); }
-    if (E) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy); } if (W) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy); }
-    if (NE) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy - hSize); } if (NW) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy - hSize); }
-    if (SE) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy + hSize); } if (SW) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy + hSize); }
+    ctx.arc(cx, cy, 2 / camera.zoom, 0, 2 * Math.PI);
+    ctx.fillStyle = ctx.strokeStyle; // Inherit the color computed in the main loop
+    ctx.fill();
+
+    ctx.beginPath();
+    if (N) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - hSize); }
+    if (S) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + hSize); }
+    if (E) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy); }
+    if (W) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy); }
+    if (NE) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy - hSize); }
+    if (NW) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy - hSize); }
+    if (SE) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy + hSize); }
+    if (SW) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy + hSize); }
     ctx.stroke();
+
+    // 3. PASS TWO: DYNAMIC VEHICULAR ANIMATION OVERLAY
+    // If there's enough macro pressure, superimpose marching particles along the active paths
+    if (trafficStress > 0.05) {
+        ctx.save();
+        
+        // Make particles a bright, neon contrasting color (e.g., pure white or high-visibility yellow)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1.0 / camera.zoom;
+
+        // Create small car-sized dashes: [Dash length in pixels, Gap length in pixels]
+        ctx.setLineDash([3, 7]);
+
+        // 🧠 TIME-SHIFT SOLVER: Calculate a velocity offset based on Date timestamp.
+        // Higher traffic stress = higher volume = faster flow speed through the conduit lines.
+        const animationSpeedScale = 0.015 + (trafficStress * 0.03); 
+        const lineDashOffset = (Date.now() * animationSpeedScale) % 10;
+        
+        // Apply marching ants offset parameter
+        ctx.lineDashOffset = -lineDashOffset;
+
+        // Trace paths again for the animated dash stroke pass
+        ctx.beginPath();
+        if (N) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - hSize); }
+        if (S) { ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + hSize); }
+        if (E) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy); }
+        if (W) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy); }
+        if (NE) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy - hSize); }
+        if (NW) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy - hSize); }
+        if (SE) { ctx.moveTo(cx, cy); ctx.lineTo(cx + hSize, cy + hSize); }
+        if (SW) { ctx.moveTo(cx, cy); ctx.lineTo(cx - hSize, cy + hSize); }
+        ctx.stroke();
+
+        ctx.restore();
+    }
 }
