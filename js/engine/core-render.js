@@ -79,14 +79,16 @@ export function renderCity(ctx, canvas, sharedGrids, mapW, mapH) {
                 const density = sharedGrids.density[idx];
                 if (density <= 0.02) continue;
 
-                let color = '#33ff33';
-                if (zone >= 4 && zone <= 6) color = '#11aa55';
-                else if (zone >= 10 && zone <= 12) color = '#3366ff';
-                else if (zone >= 15 && zone <= 17) color = '#00ffcc';
-                else if (zone >= 20 && zone <= 22) color = '#cc33ff';
-                else if (zone === 30) color = '#e6b800';
-                else if (zone === 31) color = '#ff5500';
-                else if (zone === 35) color = '#888833';
+                // ... Inside Section 1 zoning block loop in core-render.js
+                let color = '#33ff33'; // Default Residential light green
+                
+                if (zone >= 4 && zone <= 6) color = '#11aa55';       // 🏢 Public/Social Housing (Forest Green)
+                else if (zone >= 10 && zone <= 12) color = '#3366ff'; // Commercial (Blue)
+                else if (zone >= 15 && zone <= 17) color = '#00ffcc'; // Corporate Office (Teal)
+                else if (zone >= 20 && zone <= 22) color = '#cc33ff'; // 🏢 Mixed-Use Blocks (Bright Purple)
+                else if (zone === 30) color = '#e6b800';              // Light Industry (Yellow)
+                else if (zone === 31) color = '#ff5500';              // Heavy Industry (Orange)
+                else if (zone === 35) color = '#888833';              // Agriculture (Khaki)
 
                 if (density >= 0.7) {
                     ctx.fillStyle = color;

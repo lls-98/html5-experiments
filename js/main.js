@@ -44,6 +44,27 @@ window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     const statusEl = document.getElementById('stat-engine');
     
+    let pubCycle = 0; let mixCycle = 0;
+
+    if (key === 'a') {
+        const types = [
+            { id: 4, label: "LOW-DENSITY SOCIAL HOUSING", col: "#11aa55" },
+            { id: 5, label: "MED-DENSITY SOCIAL HOUSING", col: "#11aa55" },
+            { id: 6, label: "HIGH-DENSITY SOCIAL HOUSING", col: "#11aa55" }
+        ];
+        pubCycle = (pubCycle + 1) % types.length; activeBrush = "ZONE_" + types[pubCycle].id; setSystemBrush(activeBrush);
+        if (statusEl) { statusEl.innerText = `PLOT: ${types[pubCycle].label}`; statusEl.style.color = types[pubCycle].col; }
+    }
+    if (key === 'm') {
+        const types = [
+            { id: 20, label: "LOW-DENSITY MIXED-USE", col: "#cc33ff" },
+            { id: 21, label: "MED-DENSITY MIXED-USE", col: "#cc33ff" },
+            { id: 22, label: "HIGH-DENSITY MIXED-USE", col: "#cc33ff" }
+        ];
+        mixCycle = (mixCycle + 1) % types.length; activeBrush = "ZONE_" + types[mixCycle].id; setSystemBrush(activeBrush);
+        if (statusEl) { statusEl.innerText = `PLOT: ${types[mixCycle].label}`; statusEl.style.color = types[mixCycle].col; }
+    }
+
     if (key === 'z' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         executeUndoAction();
@@ -287,10 +308,12 @@ function handleWorkerMessage(e) {
         document.getElementById('stat-engine').style.color = "#33ff33";
         requestAnimationFrame(renderLoop);
     }
+
     if (e.data.cmd === 'updateStats') {
         document.getElementById('gwi-value').innerText = e.data.gwi.toFixed(1) + '%';
         document.getElementById('stat-pop').innerText = e.data.population.toLocaleString();
-
+        
+        // 1. Refresh global macro bar arrays
         if (e.data.demand) {
             const rPct = Math.max(0, Math.min(100, ((e.data.demand.R - 0.01) / 0.04) * 100));
             const cPct = Math.max(0, Math.min(100, ((e.data.demand.C - 0.01) / 0.03) * 100));
@@ -299,6 +322,39 @@ function handleWorkerMessage(e) {
             document.getElementById('bar-r').style.width = `${rPct}%`;
             document.getElementById('bar-c').style.width = `${cPct}%`;
             document.getElementById('bar-i').style.width = `${iPct}%`;
+        }
+
+        // 💰 2. CONTEXTUAL METRIC RENDERING: REVENUE CHANNELS
+        const revEl = document.getElementById('stat-revenue');
+        if (revEl && typeof e.data.revenue !== 'undefined') {
+            const roundedRevenue = Math.round(e.data.revenue);
+            
+            if (roundedRevenue > 0) {
+                revEl.className = "hud-value positive";
+                revEl.innerText = `+$${roundedRevenue.toLocaleString()}/s`;
+            } else if (roundedRevenue === 0) {
+                revEl.className = "hud-value warning";
+                revEl.innerText = "$0/s";
+            } else {
+                revEl.className = "hud-value negative";
+                revEl.innerText = `-$${Math.abs(roundedRevenue).toLocaleString()}/s`;
+            }
+        }
+
+        // 📊 3. CONTEXTUAL METRIC RENDERING: INEQ GINI INDEX
+        const ineqEl = document.getElementById('stat-inequality');
+        if (ineqEl && typeof e.data.gwi !== 'undefined') {
+            // Unpack current inequality bounds inversely out of your global structural welfare indexes
+            const computedIneqPct = 100 - e.data.gwi;
+            ineqEl.innerText = `${computedIneqPct.toFixed(1)}%`;
+
+            if (computedIneqPct > 45.0) {
+                ineqEl.className = "hud-value negative"; // Unbalanced stratification warning
+            } else if (computedIneqPct > 25.0) {
+                ineqEl.className = "hud-value warning";  // Mid-tier delta
+            } else {
+                ineqEl.className = "hud-value positive"; // Healthy fiscal stability parity
+            }
         }
     }
 }

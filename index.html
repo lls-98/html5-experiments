@@ -45,6 +45,44 @@
         ul { list-style: none; padding-left: 5px; }
         li { margin: 8px 0; font-size: 0.9rem; }
         span { float: right; font-weight: bold; }
+        
+        /* 📊 FISCAL REVENUE HUD PANELS */
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .hud-row:last-child {
+            margin-bottom: 0;
+        }
+        .sub-row {
+            border-top: 1px dashed rgba(51, 255, 51, 0.25);
+            padding-top: 8px;
+            margin-top: 6px;
+        }
+        .hud-label {
+            color: #88aaaa;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        .hud-value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .hud-value.positive {
+            color: #33ff33;
+            text-shadow: 0 0 8px rgba(51, 255, 51, 0.3);
+        }
+        .hud-value.negative {
+            color: #ff3333;
+            text-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
+        }
+        .hud-value.warning {
+            color: #ffcc00;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
+        }
+
         @keyframes blink { from { opacity: 0.7; } to { opacity: 1; text-shadow: 0 0 10px #33ff33; } }
     </style>
 </head>
@@ -69,6 +107,19 @@
                     <li>Cultural Vibrancy: <span id="stat-culture">0.0%</span></li>
                 </ul>
             </div>
+            
+            <div class="metric-group">
+                <h4>FISCAL & MACRO BUDGET</h4>
+                <div class="hud-row" style="margin-top: 4px;">
+                    <span class="hud-label">TREASURY FLUX</span>
+                    <span id="stat-revenue" class="hud-value warning">$0/s</span>
+                </div>
+                <div class="hud-row sub-row">
+                    <span class="hud-label">INEQUALITY INDEX</span>
+                    <span id="stat-inequality" class="hud-value positive">0.0%</span>
+                </div>
+            </div>
+
             <div class="metric-group">
                 <h4>METRICS & DEMOGRAPHICS</h4>
                 <ul>
@@ -77,7 +128,7 @@
                     <li>Engine State: <span id="stat-engine" style="color: #ffcc00;">SYNCING</span></li>
                 </ul>
             </div>
-            <div id="rci-container" style="display: flex; gap: 10px; background: rgba(0,20,30,0.85); padding: 8px; border: 1px solid #00ffff; font-family: monospace; font-size: 11px; color: #fff; width: fit-content; margin-top: 5px;">
+            <div id="rci-container" style="display: flex; gap: 10px; background: rgba(0,20,30,0.85); padding: 8px; border: 1px solid #00ffff; font-family: monospace; font-size: 11px; color: #fff; width: fit-content; margin-top: auto;">
                 <div>R: <div style="display:inline-block; width:80px; background:#222; height:10px; border:1px solid #555;"><div id="bar-r" style="width:50%; background:#33ff33; height:100%;"></div></div></div>
                 <div>C: <div style="display:inline-block; width:80px; background:#222; height:10px; border:1px solid #555;"><div id="bar-c" style="width:40%; background:#3366ff; height:100%;"></div></div></div>
                 <div>I: <div style="display:inline-block; width:80px; background:#222; height:10px; border:1px solid #555;"><div id="bar-i" style="width:40%; background:#ffcc00; height:100%;"></div></div></div>
